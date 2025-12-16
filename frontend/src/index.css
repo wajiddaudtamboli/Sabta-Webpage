@@ -1,0 +1,82 @@
+/* ✅ Tailwind Core */
+@import "tailwindcss";
+
+/* ✅ Global Theme Variables */
+:root {
+  --brand-bg: #232323;
+  --brand-accent: #F89A1C;
+}
+
+/* ✅ Global Defaults */
+html, body {
+  scroll-behavior: smooth;
+  background: var(--brand-bg);
+  color: var(--brand-accent);   /* ✅ ALL TEXT THIS COLOR */
+  font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+  margin: 0;
+  padding: 0;
+}
+
+/* ✅ Force all text elements to use brand color */
+*,
+h1, h2, h3, h4, h5, h6,
+p, span, a, li, button, label, input {
+  color: var(--brand-accent) !important;
+}
+
+/* ✅ For black text on accent buttons */
+.text-black {
+  color: black !important;
+}
+
+/* ✅ Parallax Fix for Mobile */
+@media (max-width: 768px) {
+  .parallax {
+    background-attachment: scroll !important;
+  }
+}
+
+@keyframes fadeSlideUp {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-slide {
+  animation: fadeSlideUp 0.8s ease-in-out;
+}
+
+@keyframes slideDown {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slideDown {
+  animation: slideDown 0.3s ease-out;
+}
+
+/* ✅ Premium Showroom Shine Animation */
+@keyframes shine {
+  0% {
+    transform: translateX(-150%);
+  }
+  100% {
+    transform: translateX(150%);
+  }
+}
+
+/* ✅ Utility class for looping shine */
+.shine-loop {
+  animation: shine 3s linear infinite;
+}
