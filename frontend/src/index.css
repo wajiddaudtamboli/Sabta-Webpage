@@ -35,15 +35,32 @@ html, body {
   color: var(--brand-accent);
 }
 
-/* Admin panel reset - normal colors */
-.admin-panel,
-.admin-panel * {
-  color: inherit !important;
+/* Admin panel reset - allow custom colors */
+.admin-panel {
+  background: #1a1a1a;
 }
 
-.admin-panel {
-  background: #f3f4f6;
-  color: #1f2937;
+/* Admin panel specific text colors */
+.admin-panel .text-white,
+.admin-panel [style*="color: #ffffff"],
+.admin-panel [style*="color:#ffffff"] {
+  color: #ffffff !important;
+}
+
+.admin-panel .text-\[\#d4a853\] {
+  color: #d4a853 !important;
+}
+
+.admin-panel .text-gray-400 {
+  color: #9ca3af !important;
+}
+
+.admin-panel .text-gray-300 {
+  color: #d1d5db !important;
+}
+
+.admin-panel .text-red-400 {
+  color: #f87171 !important;
 }
 
 /* ✅ For black text on accent buttons */
