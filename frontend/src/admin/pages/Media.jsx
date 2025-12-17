@@ -8,6 +8,8 @@ const Media = () => {
     const [url, setUrl] = useState('');
     const [selectedMedia, setSelectedMedia] = useState(null);
     const [view, setView] = useState('grid'); // 'grid' or 'list'
+    const [deviceFrame, setDeviceFrame] = useState('desktop'); // 'desktop', 'tablet', 'mobile'
+    const [showFramePreview, setShowFramePreview] = useState(false);
     const fileInputRef = useRef(null);
 
     useEffect(() => {
@@ -229,38 +231,190 @@ const Media = () => {
                 </div>
             )}
 
-            {/* Selected Media Details */}
+            {/* Selected Media Details with Device Frame Preview */}
             {selectedMedia && (
-                <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50" onClick={() => setSelectedMedia(null)}>
-                    <div className="bg-[#2a2a2a] rounded border border-gray-700 p-6 max-w-2xl w-full mx-4" onClick={e => e.stopPropagation()}>
+                <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4" onClick={() => setSelectedMedia(null)}>
+                    <div className="bg-[#2a2a2a] rounded border border-gray-700 p-6 max-w-6xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
                         <div className="flex justify-between items-start mb-4">
-                            <h3 className="text-xl font-semibold text-[#d4a853]">Media Details</h3>
+                            <h3 className="text-xl font-semibold text-[#d4a853]">Media Details & Device Preview</h3>
                             <button onClick={() => setSelectedMedia(null)} className="text-gray-400 hover:text-white cursor-pointer">
                                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                                 </svg>
                             </button>
                         </div>
-                        <img 
-                            src={selectedMedia.url} 
-                            alt="Selected" 
-                            className="w-full max-h-96 object-contain rounded mb-4"
-                        />
-                        <div className="space-y-2">
-                            <p className="text-sm text-gray-400">URL:</p>
-                            <div className="flex gap-2">
+
+                        {/* Device Frame Toggle */}
+                        <div className="mb-6 flex items-center gap-4">
+                            <label className="flex items-center gap-2 text-sm text-gray-300">
                                 <input 
-                                    type="text" 
-                                    value={selectedMedia.url} 
-                                    readOnly 
-                                    className="flex-1 p-2 bg-[#1a1a1a] border border-gray-600 rounded text-white text-sm"
+                                    type="checkbox" 
+                                    checked={showFramePreview}
+                                    onChange={(e) => setShowFramePreview(e.target.checked)}
+                                    className="w-4 h-4 text-[#d4a853] bg-[#1a1a1a] border-gray-600 rounded focus:ring-[#d4a853]"
                                 />
-                                <ActionButton onClick={() => copyToClipboard(selectedMedia.url)} variant="secondary">
-                                    Copy
-                                </ActionButton>
+                                <span>Show Device Frame Preview</span>
+                            </label>
+                            
+                            {showFramePreview && (
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => setDeviceFrame('desktop')}
+                                        className={`px-3 py-1.5 text-sm rounded cursor-pointer flex items-center gap-1 ${
+                                            deviceFrame === 'desktop' ? 'bg-[#d4a853] text-black' : 'bg-[#1a1a1a] text-white border border-gray-600'
+                                        }`}
+                                        title="Desktop (1920x1080)"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                        </svg>
+                                        Desktop
+                                    </button>
+                                    <button
+                                        onClick={() => setDeviceFrame('tablet')}
+                                        className={`px-3 py-1.5 text-sm rounded cursor-pointer flex items-center gap-1 ${
+                                            deviceFrame === 'tablet' ? 'bg-[#d4a853] text-black' : 'bg-[#1a1a1a] text-white border border-gray-600'
+                                        }`}
+                                        title="Tablet (768x1024)"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                        </svg>
+                                        Tablet
+                                    </button>
+                                    <button
+                                        onClick={() => setDeviceFrame('mobile')}
+                                        className={`px-3 py-1.5 text-sm rounded cursor-pointer flex items-center gap-1 ${
+                                            deviceFrame === 'mobile' ? 'bg-[#d4a853] text-black' : 'bg-[#1a1a1a] text-white border border-gray-600'
+                                        }`}
+                                        title="Mobile (375x667)"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                        </svg>
+                                        Mobile
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Device Frame Preview or Standard Preview */}
+                        {showFramePreview ? (
+                            <div className="flex justify-center items-center bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg p-8 mb-4">
+                                {/* Desktop Frame */}
+                                {deviceFrame === 'desktop' && (
+                                    <div className="relative">
+                                        <div className="bg-gray-800 rounded-t-lg p-2 flex items-center gap-2">
+                                            <div className="flex gap-1.5">
+                                                <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                                                <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                                                <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                                            </div>
+                                            <div className="flex-1 text-center text-xs text-gray-400">Desktop Preview (1920x1080)</div>
+                                        </div>
+                                        <div className="bg-white border-4 border-gray-800 rounded-b-lg overflow-hidden" style={{width: '960px', height: '540px'}}>
+                                            <img 
+                                                src={selectedMedia.url} 
+                                                alt="Desktop Preview" 
+                                                className="w-full h-full object-contain bg-gray-100"
+                                            />
+                                        </div>
+                                        <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2 w-64 h-6 bg-gray-700 rounded-b-3xl"></div>
+                                    </div>
+                                )}
+
+                                {/* Tablet Frame */}
+                                {deviceFrame === 'tablet' && (
+                                    <div className="relative">
+                                        <div className="bg-gray-900 rounded-3xl p-6 shadow-2xl">
+                                            <div className="absolute top-3 left-1/2 transform -translate-x-1/2 w-16 h-1 bg-gray-700 rounded-full"></div>
+                                            <div className="bg-white rounded-2xl overflow-hidden" style={{width: '384px', height: '512px'}}>
+                                                <img 
+                                                    src={selectedMedia.url} 
+                                                    alt="Tablet Preview" 
+                                                    className="w-full h-full object-contain bg-gray-100"
+                                                />
+                                            </div>
+                                            <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 w-10 h-10 rounded-full border-2 border-gray-700"></div>
+                                        </div>
+                                        <div className="text-center text-xs text-gray-400 mt-2">Tablet Preview (768x1024)</div>
+                                    </div>
+                                )}
+
+                                {/* Mobile Frame */}
+                                {deviceFrame === 'mobile' && (
+                                    <div className="relative">
+                                        <div className="bg-gray-900 rounded-[40px] p-4 shadow-2xl">
+                                            <div className="absolute top-6 left-1/2 transform -translate-x-1/2 w-20 h-5 bg-black rounded-full"></div>
+                                            <div className="bg-white rounded-[32px] overflow-hidden" style={{width: '187px', height: '333px'}}>
+                                                <img 
+                                                    src={selectedMedia.url} 
+                                                    alt="Mobile Preview" 
+                                                    className="w-full h-full object-contain bg-gray-100"
+                                                />
+                                            </div>
+                                            <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-1/3 h-1 bg-gray-700 rounded-full"></div>
+                                        </div>
+                                        <div className="text-center text-xs text-gray-400 mt-2">Mobile Preview (375x667)</div>
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="bg-[#1a1a1a] rounded-lg p-4 mb-4 flex justify-center">
+                                <img 
+                                    src={selectedMedia.url} 
+                                    alt="Selected" 
+                                    className="max-w-full max-h-96 object-contain rounded"
+                                />
+                            </div>
+                        )}
+
+                        <div className="space-y-4">
+                            <div>
+                                <p className="text-sm text-gray-400 mb-2">URL:</p>
+                                <div className="flex gap-2">
+                                    <input 
+                                        type="text" 
+                                        value={selectedMedia.url} 
+                                        readOnly 
+                                        className="flex-1 p-2 bg-[#1a1a1a] border border-gray-600 rounded text-white text-sm"
+                                    />
+                                    <ActionButton onClick={() => copyToClipboard(selectedMedia.url)} variant="secondary">
+                                        Copy
+                                    </ActionButton>
+                                </div>
+                            </div>
+
+                            {/* Image Dimensions Info */}
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div className="bg-[#1a1a1a] p-3 rounded border border-gray-700">
+                                    <p className="text-gray-400 mb-1">Type:</p>
+                                    <p className="text-white font-medium">{selectedMedia.type || 'Image'}</p>
+                                </div>
+                                <div className="bg-[#1a1a1a] p-3 rounded border border-gray-700">
+                                    <p className="text-gray-400 mb-1">Date Added:</p>
+                                    <p className="text-white font-medium">
+                                        {selectedMedia.createdAt ? new Date(selectedMedia.createdAt).toLocaleDateString() : 'N/A'}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Responsive Guidelines */}
+                            <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-4">
+                                <h4 className="text-sm font-semibold text-blue-400 mb-2">📱 Responsive Image Guidelines</h4>
+                                <ul className="text-xs text-gray-300 space-y-1">
+                                    <li>• <strong>Desktop (≥1920px):</strong> Full resolution recommended</li>
+                                    <li>• <strong>Tablet (768-1024px):</strong> Medium resolution, consider 2x retina</li>
+                                    <li>• <strong>Mobile (≤375px):</strong> Optimized size, consider mobile-first approach</li>
+                                    <li>• <strong>Tip:</strong> Use device preview to check image scaling and cropping</li>
+                                </ul>
                             </div>
                         </div>
-                        <div className="mt-4 flex justify-end gap-2">
+
+                        <div className="mt-6 flex justify-end gap-2">
+                            <ActionButton onClick={() => setSelectedMedia(null)} variant="secondary">
+                                Close
+                            </ActionButton>
                             <ActionButton onClick={() => handleDelete(selectedMedia._id)} variant="danger">
                                 Delete
                             </ActionButton>
