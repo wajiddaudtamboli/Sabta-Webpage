@@ -4,11 +4,12 @@ A full-stack web application for Sabta Granite, featuring a dynamic frontend, ad
 
 ## 🚀 Features
 
-- **Dynamic Frontend**: React + Vite with beautiful UI
-- **Admin Panel**: Complete CRUD operations for products, blogs, pages, and media
-- **Backend API**: Node.js + Express with MongoDB
+- **Dynamic Frontend**: React 19 + Vite with beautiful UI
+- **Admin Panel**: Complete CRUD operations for products, blogs, pages, enquiries, and media
+- **Backend API**: Node.js + Express 5 with MongoDB
 - **Authentication**: JWT-based admin authentication
-- **Responsive Design**: Mobile-first approach with Tailwind CSS
+- **Responsive Design**: Mobile-first approach with Tailwind CSS v4
+- **Dark Admin Theme**: Professional dark-themed admin panel
 
 ## 📁 Project Structure
 
@@ -16,29 +17,29 @@ A full-stack web application for Sabta Granite, featuring a dynamic frontend, ad
 ├── frontend/          # React + Vite frontend
 │   ├── src/
 │   │   ├── pages/     # Public pages
-│   │   ├── admin/     # Admin panel
+│   │   ├── admin/     # Admin panel (dark theme)
 │   │   ├── components/
 │   │   └── api/
 ├── backend/           # Express backend
 │   ├── routes/        # API routes
+│   ├── models/        # Mongoose schemas
 │   └── middleware/    # Auth middleware
-├── database/          # Mongoose schemas
+├── api/               # Vercel serverless functions
 └── vercel.json        # Vercel deployment config
 ```
 
-## 🛠️ Installation
+## 🛠️ Local Development
 
 ### Prerequisites
 - Node.js (v18 or higher)
-- MongoDB Atlas account
-- Git
+- MongoDB (local or Atlas)
 
-### Local Setup
+### Setup
 
 1. **Clone the repository**
 ```bash
-git clone https://github.com/YOUR_USERNAME/YOUR_REPO.git
-cd YOUR_REPO
+git clone https://github.com/wajiddaudtamboli/Sabta-Webpage.git
+cd Sabta-Webpage
 ```
 
 2. **Install Backend Dependencies**
@@ -47,102 +48,155 @@ cd backend
 npm install
 ```
 
-3. **Install Frontend Dependencies**
+3. **Configure Backend Environment**
+Create `.env` file in `backend/` folder:
+```env
+MONGODB_URI=mongodb://localhost:27017/sabta-granite
+JWT_SECRET=your_super_secret_jwt_key_here
+PORT=5000
+```
+
+4. **Install Frontend Dependencies**
 ```bash
 cd ../frontend
 npm install
 ```
 
-4. **Configure Environment Variables**
-
-Create `backend/.env`:
-```env
-MONGODB_URI=your_mongodb_connection_string
-JWT_SECRET=your_secure_jwt_secret
-PORT=5000
-```
-
-5. **Run the Application**
-
-**Backend** (in `backend/` directory):
+5. **Create Admin User**
 ```bash
-npm start
+cd ../backend
+node createAdmin.js
 ```
+Default credentials: `admin@sabta.com` / `Admin@123`
 
-**Frontend** (in `frontend/` directory):
+6. **Run Development Servers**
+
+Terminal 1 - Backend:
 ```bash
+cd backend
 npm run dev
 ```
 
-Visit `http://localhost:5173` for the frontend and `http://localhost:5000` for the backend API.
+Terminal 2 - Frontend:
+```bash
+cd frontend
+npm run dev
+```
 
-## 🚀 Deployment on Vercel
+## 🚀 Vercel Deployment
 
-### Environment Variables Required:
-- `MONGODB_URI` - MongoDB Atlas connection string
-- `JWT_SECRET` - Secure random string for JWT
-- `VITE_BACKEND_URL` - Set to `/api`
+### Step 1: Import Project
+1. Go to [Vercel Dashboard](https://vercel.com/dashboard)
+2. Click "Add New Project"
+3. Import from GitHub: `wajiddaudtamboli/Sabta-Webpage`
 
-### Steps:
-1. Import repository to Vercel
-2. Add environment variables
-3. Deploy
+### Step 2: Configure Environment Variables
+In Vercel Project Settings → Environment Variables, add:
+
+| Variable | Value |
+|----------|-------|
+| `MONGODB_URI` | `mongodb+srv://username:password@cluster.mongodb.net/sabta-granite` |
+| `JWT_SECRET` | `your_super_secret_jwt_key_32_chars_minimum` |
+
+### Step 3: Deploy
+- Click "Deploy"
+- Vercel will automatically build and deploy
+
+### Step 4: Create Admin User (Production)
+After deployment, you'll need to create an admin user in your MongoDB Atlas database.
+
+Option 1: Use MongoDB Compass to insert directly
+Option 2: Use the `/api/auth/register` endpoint once, then remove it
 
 ## 🔐 Admin Panel
 
-Access the admin panel at `/admin/login`
+Access: `https://your-domain.vercel.app/admin/login`
 
-**Create First Admin User:**
-```bash
-curl -X POST http://localhost:5000/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"email":"admin@example.com","password":"YourPassword123"}'
-```
+**Default Login** (local):
+- Email: `admin@sabta.com`
+- Password: `Admin@123`
 
-## 📝 API Endpoints
+### Admin Features:
+- **Dashboard**: Overview of products, blogs, enquiries
+- **Products**: Manage stone products with collections
+- **Blogs**: Create/Edit blog posts with SEO
+- **Pages**: Edit Home, About, Contact page content
+- **Enquiries**: View and manage customer enquiries
+- **Media**: Upload and manage images
 
-### Authentication
-- `POST /api/auth/register` - Register admin
-- `POST /api/auth/login` - Login admin
-- `GET /api/auth/me` - Get current user
+## 🔗 API Endpoints
 
-### Products
-- `GET /api/products` - Get all products
-- `GET /api/products/:id` - Get single product
-- `POST /api/products` - Create product (auth required)
-- `PUT /api/products/:id` - Update product (auth required)
-- `DELETE /api/products/:id` - Delete product (auth required)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/auth/login` | Admin login |
+| GET | `/api/auth/me` | Get current user |
+| GET | `/api/products` | Get all products |
+| GET | `/api/products/:slug` | Get single product |
+| POST | `/api/products` | Create product |
+| PUT | `/api/products/:id` | Update product |
+| DELETE | `/api/products/:id` | Delete product |
+| GET | `/api/blogs` | Get published blogs |
+| GET | `/api/blogs/admin` | Get all blogs (admin) |
+| POST | `/api/blogs` | Create blog |
+| PUT | `/api/blogs/:id` | Update blog |
+| DELETE | `/api/blogs/:id` | Delete blog |
+| GET | `/api/enquiries` | Get all enquiries |
+| POST | `/api/enquiries` | Submit enquiry |
+| PUT | `/api/enquiries/:id` | Update enquiry status |
+| DELETE | `/api/enquiries/:id` | Delete enquiry |
+| GET | `/api/pages/:name` | Get page content |
+| PUT | `/api/pages/:name` | Update page content |
+| GET | `/api/media` | Get all media |
+| POST | `/api/media` | Add media |
+| DELETE | `/api/media/:id` | Delete media |
 
-### Blogs
-- `GET /api/blogs` - Get all blogs
-- `GET /api/blogs/:slug` - Get blog by slug
-- `POST /api/blogs` - Create blog (auth required)
-- `PUT /api/blogs/:id` - Update blog (auth required)
-- `DELETE /api/blogs/:id` - Delete blog (auth required)
+## 🎨 Tech Stack
 
-### Pages
-- `GET /api/pages/:pageName` - Get page content
-- `PUT /api/pages/:pageName` - Update page content (auth required)
+**Frontend:**
+- React 19
+- Vite 7
+- Tailwind CSS v4
+- React Router v7
+- Axios
+- Framer Motion
+- Swiper
 
-### Enquiries
-- `POST /api/enquiries` - Submit enquiry
-- `GET /api/enquiries` - Get all enquiries (auth required)
+**Backend:**
+- Node.js
+- Express 5
+- MongoDB + Mongoose 9
+- JWT Authentication
+- bcryptjs
 
-### Media
-- `GET /api/media` - Get all media
-- `POST /api/media` - Upload media (auth required)
+**Deployment:**
+- Vercel (Serverless Functions)
+- MongoDB Atlas
 
-## 🛡️ Security
+## 📝 MongoDB Atlas Setup
 
-- JWT authentication for admin routes
-- Password hashing with bcrypt
-- CORS enabled
-- Environment variables for sensitive data
+1. Create account at [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
+2. Create a new cluster (free tier available)
+3. Create database user with password
+4. Whitelist IP addresses (use 0.0.0.0/0 for Vercel)
+5. Get connection string and add to Vercel environment variables
+
+## 🔧 Troubleshooting
+
+**Build Errors:**
+- Ensure all dependencies are installed
+- Check for TypeScript/ESLint errors
+- Verify environment variables are set
+
+**Database Connection:**
+- Verify MongoDB URI is correct
+- Check IP whitelist in MongoDB Atlas
+- Ensure database user has correct permissions
+
+**Authentication Issues:**
+- Verify JWT_SECRET is set
+- Check token expiration
+- Clear localStorage and retry login
 
 ## 📄 License
 
-This project is proprietary and confidential.
-
-## 👥 Contact
-
-For support or inquiries, please contact Sabta Granite.
+MIT License - feel free to use for personal or commercial projects.
