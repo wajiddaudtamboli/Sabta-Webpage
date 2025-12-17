@@ -1,7 +1,9 @@
 const express = require('express');
-const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
+
+// Use shared database module
+const { mongoose, connectToDatabase } = require('../backend/db');
 
 // Set mongoose to buffer commands until connection is ready
 mongoose.set('bufferCommands', true);
@@ -36,42 +38,6 @@ app.use(cors({
     credentials: true
 }));
 app.use(express.json());
-
-// MongoDB connection
-let connectionPromise = null;
-
-const connectToDatabase = async () => {
-    if (mongoose.connection.readyState === 1) {
-        return mongoose.connection;
-    }
-    
-    if (mongoose.connection.readyState === 2) {
-        // Currently connecting, wait for it
-        return connectionPromise;
-    }
-    
-    if (!process.env.MONGODB_URI) {
-        throw new Error('MONGODB_URI environment variable is not set');
-    }
-    
-    console.log('Creating new MongoDB connection...');
-    connectionPromise = mongoose.connect(process.env.MONGODB_URI, {
-        serverSelectionTimeoutMS: 15000,
-        socketTimeoutMS: 60000,
-    });
-    
-    try {
-        await connectionPromise;
-        // Wait a bit for the connection to stabilize
-        await new Promise(resolve => setTimeout(resolve, 100));
-        console.log('MongoDB connected to:', mongoose.connection.name);
-        return mongoose.connection;
-    } catch (error) {
-        console.error('MongoDB connection error:', error.message);
-        connectionPromise = null;
-        throw error;
-    }
-};
 
 // Ensure DB connection before each request
 app.use(async (req, res, next) => {

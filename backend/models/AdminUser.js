@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const { mongoose } = require('../db');
 
 const AdminUserSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },

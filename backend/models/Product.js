@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const { mongoose } = require('../db');
 
 const ProductSchema = new mongoose.Schema({
     code: { type: String }, // e.g., SG01099

@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const { mongoose } = require('../db');
 
 const BlogSchema = new mongoose.Schema({
     title: { type: String, required: true },
