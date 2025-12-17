@@ -29,7 +29,7 @@ const Login = () => {
     };
 
     return (
-        <div className="admin-panel min-h-screen flex relative">
+        <div className="admin-panel min-h-screen flex flex-col md:flex-row relative">
             {/* Back to Home Button */}
             <Link 
                 to="/" 
@@ -50,21 +50,21 @@ const Login = () => {
                         className="w-64 h-64 object-contain rounded-full"
                     />
                 </div>
-                <h2 className="mt-8 text-2xl tracking-wide">
+                <h2 className="mt-8 text-2xl tracking-wide text-center">
                     <span className="text-[#d4a853]">SABTA</span>
-                    <span className="text-white"> GRANITE & MARBLES TRADING</span>
+                    <span style={{color: '#ffffff'}}> GRANITE & MARBLES TRADING</span>
                 </h2>
             </div>
 
             {/* Right Side - Login Form */}
-            <div className="w-full md:w-1/2 bg-[#2a2a2a] flex items-center justify-center p-8">
-                <div className="w-full max-w-md">
+            <div className="w-full md:w-1/2 bg-[#2a2a2a] flex items-center justify-center p-6 md:p-8 min-h-screen md:min-h-0">
+                <div className="w-full max-w-md pt-16 md:pt-0">
                     <h1 className="text-center mb-8">
                         <span className="text-[#d4a853]">SABTA GRANITE</span>
-                        <span className="text-white"> Website Portal</span>
+                        <span style={{color: '#ffffff'}}> Website Portal</span>
                     </h1>
 
-                    <h2 className="text-white text-2xl mb-6 font-serif">Sign In</h2>
+                    <h2 style={{color: '#ffffff'}} className="text-2xl mb-6 font-serif">Sign In</h2>
 
                     {error && (
                         <div className="bg-red-500/20 border border-red-500 text-red-400 px-4 py-2 rounded mb-4">
@@ -94,8 +94,8 @@ const Login = () => {
                             />
                         </div>
 
-                        <div className="flex items-center justify-between mb-6 text-sm">
-                            <label className="flex items-center text-white cursor-pointer">
+                        <div className="flex flex-wrap items-center justify-between mb-6 text-sm gap-2">
+                            <label className="flex items-center cursor-pointer" style={{color: '#ffffff'}}>
                                 <input
                                     type="checkbox"
                                     checked={rememberMe}
@@ -104,7 +104,7 @@ const Login = () => {
                                 />
                                 Remember Me
                             </label>
-                            <a href="#" className="text-white hover:text-[#d4a853] transition-colors">
+                            <a href="#" style={{color: '#ffffff'}} className="hover:text-[#d4a853] transition-colors">
                                 Forgot Your Password?
                             </a>
                         </div>
