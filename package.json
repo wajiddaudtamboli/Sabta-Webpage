@@ -1,24 +1,25 @@
 {
-  "name": "sabta-granite-",
+  "name": "sabta-granite",
   "version": "1.0.0",
   "description": "A full-stack web application for Sabta Granite, featuring a dynamic frontend, admin panel, and backend API.",
-  "main": "index.js",
+  "main": "api/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "cd frontend && npm run build",
+    "vercel-build": "cd frontend && npm install && npm run build"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Bhaskar2522/Sabta-Granite-.git"
+    "url": "git+https://github.com/wajiddaudtamboli/Sabta-Webpage.git"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": ["granite", "marble", "stone", "website"],
+  "author": "Sabta Granite",
+  "license": "MIT",
   "type": "commonjs",
-  "bugs": {
-    "url": "https://github.com/Bhaskar2522/Sabta-Granite-/issues"
-  },
-  "homepage": "https://github.com/Bhaskar2522/Sabta-Granite-#readme",
   "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.5",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.0.1"
   }
 }
