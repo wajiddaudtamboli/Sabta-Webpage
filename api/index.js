@@ -62,6 +62,8 @@ const connectToDatabase = async () => {
     
     try {
         await connectionPromise;
+        // Wait a bit for the connection to stabilize
+        await new Promise(resolve => setTimeout(resolve, 100));
         console.log('MongoDB connected to:', mongoose.connection.name);
         return mongoose.connection;
     } catch (error) {
@@ -75,6 +77,11 @@ const connectToDatabase = async () => {
 app.use(async (req, res, next) => {
     try {
         await connectToDatabase();
+        // Double-check connection state
+        if (mongoose.connection.readyState !== 1) {
+            console.log('Connection state after connect:', mongoose.connection.readyState);
+            throw new Error('Connection not ready after connect');
+        }
         next();
     } catch (error) {
         console.error('Database connection error:', error.message);

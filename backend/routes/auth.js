@@ -56,11 +56,14 @@ router.post('/login', async (req, res) => {
             return res.status(400).json({ message: 'Email and password required' });
         }
         
-        // Ensure connection is ready
-        await ensureConnection();
-        console.log('Connection confirmed ready');
+        // Check connection state
+        if (mongoose.connection.readyState !== 1) {
+            console.error('MongoDB not connected, state:', mongoose.connection.readyState);
+            return res.status(500).json({ message: 'Database not ready', state: mongoose.connection.readyState });
+        }
         
-        const user = await AdminUser.findOne({ email });
+        console.log('Starting user query...');
+        const user = await AdminUser.findOne({ email }).maxTimeMS(10000);
         console.log('User found:', !!user);
         
         if (!user) return res.status(400).json({ message: 'Invalid credentials' });
