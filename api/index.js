@@ -115,7 +115,32 @@ try {
 }
 
 app.get('/api', (req, res) => {
-    res.json({ message: 'Sabta Webpage API is running', status: 'ok' });
+    res.json({ 
+        message: 'Sabta Webpage API is running', 
+        status: 'ok',
+        dbState: mongoose.connection.readyState,
+        dbName: mongoose.connection.name || 'not connected'
+    });
+});
+
+app.get('/api/debug', async (req, res) => {
+    try {
+        await connectToDatabase();
+        res.json({
+            mongoUri: process.env.MONGODB_URI ? 'SET (hidden)' : 'NOT SET',
+            jwtSecret: process.env.JWT_SECRET ? 'SET' : 'NOT SET',
+            dbState: mongoose.connection.readyState,
+            dbName: mongoose.connection.name,
+            dbHost: mongoose.connection.host
+        });
+    } catch (error) {
+        res.json({
+            error: error.message,
+            mongoUri: process.env.MONGODB_URI ? 'SET (hidden)' : 'NOT SET',
+            jwtSecret: process.env.JWT_SECRET ? 'SET' : 'NOT SET',
+            dbState: mongoose.connection.readyState
+        });
+    }
 });
 
 app.get('/', (req, res) => {
