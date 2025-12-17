@@ -2,8 +2,27 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const mongoose = require('mongoose');
 const AdminUser = require('../models/AdminUser');
 const authMiddleware = require('../middleware/authMiddleware');
+
+// Helper to ensure connection is ready
+const ensureConnection = async () => {
+    if (mongoose.connection.readyState !== 1) {
+        console.log('Waiting for MongoDB connection...');
+        await new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => reject(new Error('Connection timeout')), 15000);
+            mongoose.connection.once('connected', () => {
+                clearTimeout(timeout);
+                resolve();
+            });
+            if (mongoose.connection.readyState === 1) {
+                clearTimeout(timeout);
+                resolve();
+            }
+        });
+    }
+};
 
 // Register (Initial setup only, should be protected or removed later)
 router.post('/register', async (req, res) => {
@@ -31,10 +50,15 @@ router.post('/login', async (req, res) => {
     const { email, password } = req.body;
     try {
         console.log('Login attempt for:', email);
+        console.log('MongoDB connection state:', mongoose.connection.readyState);
         
         if (!email || !password) {
             return res.status(400).json({ message: 'Email and password required' });
         }
+        
+        // Ensure connection is ready
+        await ensureConnection();
+        console.log('Connection confirmed ready');
         
         const user = await AdminUser.findOne({ email });
         console.log('User found:', !!user);
