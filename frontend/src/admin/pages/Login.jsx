@@ -44,18 +44,11 @@ const Login = () => {
             {/* Left Side - Branding */}
             <div className="hidden md:flex md:w-1/2 bg-[#1a1a1a] items-center justify-center flex-col p-8">
                 <div className="relative">
-                    <div className="w-64 h-64 border-2 border-white/30 rounded-full flex items-center justify-center">
-                        <div className="text-center">
-                            <div className="text-6xl font-bold tracking-wider">
-                                <span className="text-[#d4a853]">S</span>
-                                <span className="text-[#d4a853]">A</span>
-                                <span className="text-[#d4a853]">B</span>
-                                <span className="text-white">T</span>
-                                <span className="text-[#d4a853]">A</span>
-                            </div>
-                            <p className="text-[#d4a853] text-xs mt-2 tracking-[0.3em]">CARVING STONES, CRAFTING LUXURY</p>
-                        </div>
-                    </div>
+                    <img 
+                        src="https://res.cloudinary.com/duhhsnbwh/image/upload/v1765988869/Sabta_logo_gkgjla.jpg" 
+                        alt="SABTA Logo" 
+                        className="w-64 h-64 object-contain rounded-full"
+                    />
                 </div>
                 <h2 className="mt-8 text-2xl tracking-wide">
                     <span className="text-[#d4a853]">SABTA</span>
