@@ -3,6 +3,10 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
 
+// Set mongoose to buffer commands until connection is ready
+mongoose.set('bufferCommands', true);
+mongoose.set('bufferTimeoutMS', 30000); // 30 seconds
+
 const app = express();
 
 // Log environment info for debugging
@@ -34,28 +38,35 @@ app.use(cors({
 app.use(express.json());
 
 // MongoDB connection
-let isConnected = false;
+let connectionPromise = null;
 
 const connectToDatabase = async () => {
-    if (isConnected && mongoose.connection.readyState === 1) {
-        return;
+    if (mongoose.connection.readyState === 1) {
+        return mongoose.connection;
+    }
+    
+    if (mongoose.connection.readyState === 2) {
+        // Currently connecting, wait for it
+        return connectionPromise;
     }
     
     if (!process.env.MONGODB_URI) {
         throw new Error('MONGODB_URI environment variable is not set');
     }
     
+    console.log('Creating new MongoDB connection...');
+    connectionPromise = mongoose.connect(process.env.MONGODB_URI, {
+        serverSelectionTimeoutMS: 15000,
+        socketTimeoutMS: 60000,
+    });
+    
     try {
-        console.log('Connecting to MongoDB...');
-        await mongoose.connect(process.env.MONGODB_URI, {
-            serverSelectionTimeoutMS: 10000,
-            socketTimeoutMS: 45000,
-        });
-        isConnected = true;
+        await connectionPromise;
         console.log('MongoDB connected to:', mongoose.connection.name);
+        return mongoose.connection;
     } catch (error) {
         console.error('MongoDB connection error:', error.message);
-        isConnected = false;
+        connectionPromise = null;
         throw error;
     }
 };
