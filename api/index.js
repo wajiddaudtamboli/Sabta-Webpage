@@ -1,8 +1,15 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const path = require('path');
 
 const app = express();
+
+// Log environment info for debugging
+console.log('API Starting...');
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('MONGODB_URI set:', !!process.env.MONGODB_URI);
+console.log('JWT_SECRET set:', !!process.env.JWT_SECRET);
 
 // Middleware
 app.use(cors({
@@ -35,6 +42,7 @@ let isConnecting = false;
 async function connectToDatabase() {
     // If already connected, return cached connection
     if (cachedDb && mongoose.connection.readyState === 1) {
+        console.log('Using cached database connection');
         return cachedDb;
     }
     
@@ -66,7 +74,7 @@ async function connectToDatabase() {
             minPoolSize: 1,
         });
         
-        console.log('MongoDB connected successfully');
+        console.log('MongoDB connected successfully to:', mongoose.connection.name);
         cachedDb = connection;
         return cachedDb;
     } catch (error) {
@@ -77,7 +85,7 @@ async function connectToDatabase() {
     }
 }
 
-// Initialize database connection
+// Initialize database connection middleware
 app.use(async (req, res, next) => {
     try {
         await connectToDatabase();
@@ -86,18 +94,25 @@ app.use(async (req, res, next) => {
         console.error('Database connection error:', error.message);
         res.status(500).json({ 
             message: 'Database connection failed', 
-            error: process.env.NODE_ENV === 'development' ? error.message : 'Internal error'
+            error: error.message
         });
     }
 });
 
-// Routes
-app.use('/api/auth', require('../backend/routes/auth'));
-app.use('/api/pages', require('../backend/routes/pages'));
-app.use('/api/products', require('../backend/routes/products'));
-app.use('/api/blogs', require('../backend/routes/blogs'));
-app.use('/api/enquiries', require('../backend/routes/enquiries'));
-app.use('/api/media', require('../backend/routes/media'));
+// Routes - use path.join for proper path resolution in serverless
+const routesPath = path.join(__dirname, '..', 'backend', 'routes');
+
+try {
+    app.use('/api/auth', require(path.join(routesPath, 'auth')));
+    app.use('/api/pages', require(path.join(routesPath, 'pages')));
+    app.use('/api/products', require(path.join(routesPath, 'products')));
+    app.use('/api/blogs', require(path.join(routesPath, 'blogs')));
+    app.use('/api/enquiries', require(path.join(routesPath, 'enquiries')));
+    app.use('/api/media', require(path.join(routesPath, 'media')));
+    console.log('All routes loaded successfully');
+} catch (routeError) {
+    console.error('Error loading routes:', routeError.message);
+}
 
 app.get('/api', (req, res) => {
     res.json({ message: 'Sabta Webpage API is running', status: 'ok' });
