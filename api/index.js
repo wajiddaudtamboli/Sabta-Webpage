@@ -14,7 +14,6 @@ console.log('JWT_SECRET set:', !!process.env.JWT_SECRET);
 // Middleware
 app.use(cors({
     origin: function(origin, callback) {
-        // Allow requests with no origin (mobile apps, curl, etc.)
         if (!origin) return callback(null, true);
         
         const allowedOrigins = [
@@ -24,68 +23,44 @@ app.use(cors({
             process.env.FRONTEND_URL
         ].filter(Boolean);
         
-        // Check if origin is allowed or matches vercel.app pattern
         if (allowedOrigins.includes(origin) || /\.vercel\.app$/.test(origin)) {
             return callback(null, true);
         }
         
-        callback(null, true); // Allow all origins for now to debug
+        callback(null, true);
     },
     credentials: true
 }));
 app.use(express.json());
 
-// MongoDB connection with caching for serverless
-let cachedDb = null;
-let isConnecting = false;
+// MongoDB connection
+let isConnected = false;
 
-async function connectToDatabase() {
-    // If already connected, return cached connection
-    if (cachedDb && mongoose.connection.readyState === 1) {
-        console.log('Using cached database connection');
-        return cachedDb;
+const connectToDatabase = async () => {
+    if (isConnected && mongoose.connection.readyState === 1) {
+        return;
     }
     
-    // Prevent multiple simultaneous connection attempts
-    if (isConnecting) {
-        // Wait for existing connection attempt
-        await new Promise(resolve => setTimeout(resolve, 100));
-        return connectToDatabase();
+    if (!process.env.MONGODB_URI) {
+        throw new Error('MONGODB_URI environment variable is not set');
     }
-    
-    isConnecting = true;
     
     try {
-        // Disconnect if in a bad state
-        if (mongoose.connection.readyState !== 0 && mongoose.connection.readyState !== 1) {
-            await mongoose.disconnect();
-        }
-        
-        if (!process.env.MONGODB_URI) {
-            throw new Error('MONGODB_URI environment variable is not set');
-        }
-        
         console.log('Connecting to MongoDB...');
-        
-        const connection = await mongoose.connect(process.env.MONGODB_URI, {
+        await mongoose.connect(process.env.MONGODB_URI, {
             serverSelectionTimeoutMS: 10000,
             socketTimeoutMS: 45000,
-            maxPoolSize: 10,
-            minPoolSize: 1,
         });
-        
-        console.log('MongoDB connected successfully to:', mongoose.connection.name);
-        cachedDb = connection;
-        return cachedDb;
+        isConnected = true;
+        console.log('MongoDB connected to:', mongoose.connection.name);
     } catch (error) {
         console.error('MongoDB connection error:', error.message);
+        isConnected = false;
         throw error;
-    } finally {
-        isConnecting = false;
     }
-}
+};
 
-// Initialize database connection middleware
+// Ensure DB connection before each request
 app.use(async (req, res, next) => {
     try {
         await connectToDatabase();
@@ -99,7 +74,7 @@ app.use(async (req, res, next) => {
     }
 });
 
-// Routes - use path.join for proper path resolution in serverless
+// Routes
 const routesPath = path.join(__dirname, '..', 'backend', 'routes');
 
 try {
@@ -124,23 +99,13 @@ app.get('/api', (req, res) => {
 });
 
 app.get('/api/debug', async (req, res) => {
-    try {
-        await connectToDatabase();
-        res.json({
-            mongoUri: process.env.MONGODB_URI ? 'SET (hidden)' : 'NOT SET',
-            jwtSecret: process.env.JWT_SECRET ? 'SET' : 'NOT SET',
-            dbState: mongoose.connection.readyState,
-            dbName: mongoose.connection.name,
-            dbHost: mongoose.connection.host
-        });
-    } catch (error) {
-        res.json({
-            error: error.message,
-            mongoUri: process.env.MONGODB_URI ? 'SET (hidden)' : 'NOT SET',
-            jwtSecret: process.env.JWT_SECRET ? 'SET' : 'NOT SET',
-            dbState: mongoose.connection.readyState
-        });
-    }
+    res.json({
+        mongoUri: process.env.MONGODB_URI ? 'SET (hidden)' : 'NOT SET',
+        jwtSecret: process.env.JWT_SECRET ? 'SET' : 'NOT SET',
+        dbState: mongoose.connection.readyState,
+        dbName: mongoose.connection.name,
+        dbHost: mongoose.connection.host
+    });
 });
 
 app.get('/', (req, res) => {
@@ -150,7 +115,7 @@ app.get('/', (req, res) => {
 // Error handling
 app.use((err, req, res, next) => {
     console.error(err.stack);
-    res.status(500).json({ message: 'Something went wrong!' });
+    res.status(500).json({ message: 'Something went wrong!', error: err.message });
 });
 
 module.exports = app;

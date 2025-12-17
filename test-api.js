@@ -1,12 +1,18 @@
 async function testLogin() {
     try {
-        console.log('Testing API...');
+        console.log('Testing Debug Endpoint...');
+        const debugResponse = await fetch('https://sabta-webpages.vercel.app/api/debug');
+        console.log('Debug Status:', debugResponse.status);
+        const debugData = await debugResponse.json();
+        console.log('Debug Response:', JSON.stringify(debugData, null, 2));
+        
+        console.log('\nTesting API...');
         
         // Test basic API
         const apiResponse = await fetch('https://sabta-webpages.vercel.app/api');
         console.log('API Status:', apiResponse.status);
         const apiData = await apiResponse.json();
-        console.log('API Response:', apiData);
+        console.log('API Response:', JSON.stringify(apiData, null, 2));
         
         // Test login
         console.log('\nTesting Login...');
