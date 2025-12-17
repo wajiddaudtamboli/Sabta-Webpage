@@ -1,8 +1,21 @@
 import axios from "axios";
 
+// Use relative URL in production (same domain), localhost in development
+const getBaseURL = () => {
+  if (import.meta.env.VITE_BACKEND_URL) {
+    return import.meta.env.VITE_BACKEND_URL;
+  }
+  // In production, use relative path (same domain)
+  if (import.meta.env.PROD) {
+    return '/api';
+  }
+  // In development, use localhost
+  return 'http://localhost:5000/api';
+};
+
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_BACKEND_URL || "http://localhost:5000/api",
-  timeout: 10000, // 10 second timeout
+  baseURL: getBaseURL(),
+  timeout: 15000, // 15 second timeout for serverless cold starts
   headers: {
     'Content-Type': 'application/json',
   },

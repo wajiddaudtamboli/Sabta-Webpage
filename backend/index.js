@@ -12,25 +12,36 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-// Database Connection
-mongoose.connect(process.env.MONGODB_URI)
-    .then(() => console.log('MongoDB connected'))
-    .catch(err => console.error('MongoDB connection error:', err));
+// Database Connection - wait for connection before starting server
+const startServer = async () => {
+    try {
+        await mongoose.connect(process.env.MONGODB_URI, {
+            serverSelectionTimeoutMS: 5000,
+            socketTimeoutMS: 45000,
+        });
+        console.log('MongoDB connected');
+        
+        // Routes
+        app.use('/api/auth', require('./routes/auth'));
+        app.use('/api/pages', require('./routes/pages'));
+        app.use('/api/products', require('./routes/products'));
+        app.use('/api/blogs', require('./routes/blogs'));
+        app.use('/api/enquiries', require('./routes/enquiries'));
+        app.use('/api/media', require('./routes/media'));
 
-// Routes
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/pages', require('./routes/pages'));
-app.use('/api/products', require('./routes/products'));
-app.use('/api/blogs', require('./routes/blogs'));
-app.use('/api/enquiries', require('./routes/enquiries'));
-app.use('/api/media', require('./routes/media'));
+        app.get('/', (req, res) => {
+            res.send('Sabta Webpage API is running');
+        });
 
-app.get('/', (req, res) => {
-    res.send('Sabta Webpage API is running');
-});
+        app.listen(PORT, () => {
+            console.log(`Server running on port ${PORT}`);
+        });
+    } catch (err) {
+        console.error('MongoDB connection error:', err);
+        process.exit(1);
+    }
+};
 
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
+startServer();
 
 module.exports = app; // For Vercel

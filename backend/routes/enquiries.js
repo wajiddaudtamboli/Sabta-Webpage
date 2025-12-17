@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const Enquiry = require('../../database/Enquiry');
+const Enquiry = require('../models/Enquiry');
 const authMiddleware = require('../middleware/authMiddleware');
 
 // Create enquiry (Public)
@@ -29,6 +29,16 @@ router.put('/:id', authMiddleware, async (req, res) => {
     try {
         const enquiry = await Enquiry.findByIdAndUpdate(req.params.id, req.body, { new: true });
         res.json(enquiry);
+    } catch (err) {
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Delete enquiry (Admin)
+router.delete('/:id', authMiddleware, async (req, res) => {
+    try {
+        await Enquiry.findByIdAndDelete(req.params.id);
+        res.json({ message: 'Enquiry deleted' });
     } catch (err) {
         res.status(500).json({ message: 'Server error' });
     }

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const Media = require('../../database/Media');
+const Media = require('../models/Media');
 const authMiddleware = require('../middleware/authMiddleware');
 
 // Get all media

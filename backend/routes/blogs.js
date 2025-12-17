@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const Blog = require('../../database/Blog');
+const Blog = require('../models/Blog');
 const authMiddleware = require('../middleware/authMiddleware');
 
 // Get all published blogs

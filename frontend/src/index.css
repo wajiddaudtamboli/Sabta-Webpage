@@ -17,11 +17,33 @@ html, body {
   padding: 0;
 }
 
-/* ✅ Force all text elements to use brand color */
-*,
-h1, h2, h3, h4, h5, h6,
-p, span, a, li, button, label, input {
-  color: var(--brand-accent) !important;
+/* ✅ Force all text elements to use brand color (exclude admin) */
+:not(.admin-panel) > *,
+:not(.admin-panel) h1, 
+:not(.admin-panel) h2, 
+:not(.admin-panel) h3, 
+:not(.admin-panel) h4, 
+:not(.admin-panel) h5, 
+:not(.admin-panel) h6,
+:not(.admin-panel) p, 
+:not(.admin-panel) span, 
+:not(.admin-panel) a, 
+:not(.admin-panel) li, 
+:not(.admin-panel) button, 
+:not(.admin-panel) label, 
+:not(.admin-panel) input {
+  color: var(--brand-accent);
+}
+
+/* Admin panel reset - normal colors */
+.admin-panel,
+.admin-panel * {
+  color: inherit !important;
+}
+
+.admin-panel {
+  background: #f3f4f6;
+  color: #1f2937;
 }
 
 /* ✅ For black text on accent buttons */

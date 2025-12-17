@@ -42,6 +42,13 @@ const Navbar = () => {
                 </button>
               </Link>
             </li>
+            <li>
+              <Link to="/admin/login">
+                <button className="p-2 border border-(--brand-accent) font-semibold rounded hover:bg-(--brand-accent) hover:text-black transition">
+                  ADMIN
+                </button>
+              </Link>
+            </li>
           </ul>
 
           {/* Mobile Hamburger */}
@@ -107,6 +114,11 @@ const Navbar = () => {
           <Link to="/new-arrival" onClick={() => setMenuOpen(false)} className="block">
             <button>
               NEW ARRIVALS
+            </button>
+          </Link>
+          <Link to="/admin/login" onClick={() => setMenuOpen(false)} className="block">
+            <button className="border border-(--brand-accent) px-4 py-2 rounded hover:bg-(--brand-accent) hover:text-black transition">
+              ADMIN LOGIN
             </button>
           </Link>
         </nav>

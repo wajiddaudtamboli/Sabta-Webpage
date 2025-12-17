@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const Page = require('../../database/Page');
+const Page = require('../models/Page');
 const authMiddleware = require('../middleware/authMiddleware');
 
 // Get page by name

@@ -1,13 +1,61 @@
 import { IoMdSend } from "react-icons/io";
+import { useState } from "react";
+import { api } from "../api/api";
 
 const ContactForm = () => {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    message: ''
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState(null);
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setSubmitStatus(null);
+
+    try {
+      await api.post('/enquiries', formData);
+      setSubmitStatus('success');
+      setFormData({ name: '', email: '', phone: '', message: '' });
+    } catch (err) {
+      console.error('Error submitting form:', err);
+      setSubmitStatus('error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="w-full px-6 md:px-16 lg:px-32 py-20 mt-20">
       <h2 className="text-3xl font-semibold mb-10 tracking-wide">
         Get in Touch
       </h2>
 
+      {submitStatus === 'success' && (
+        <div className="mb-6 p-4 bg-green-500/20 border border-green-500 rounded-lg text-green-400">
+          Thank you! Your message has been sent successfully.
+        </div>
+      )}
+
+      {submitStatus === 'error' && (
+        <div className="mb-6 p-4 bg-red-500/20 border border-red-500 rounded-lg text-red-400">
+          Sorry, there was an error. Please try again.
+        </div>
+      )}
+
       <form
+        onSubmit={handleSubmit}
         className="
           backdrop-blur-sm 
           border border-(--brand-accent)/30 
@@ -27,6 +75,8 @@ const ContactForm = () => {
               name="name"
               required
               placeholder="Full Name"
+              value={formData.name}
+              onChange={handleChange}
               className="
                 w-full px-4 py-3
                 bg-transparent
@@ -66,6 +116,8 @@ const ContactForm = () => {
               name="email"
               required
               placeholder="Email Address"
+              value={formData.email}
+              onChange={handleChange}
               className="
                 w-full px-4 py-3
                 bg-transparent
@@ -106,6 +158,8 @@ const ContactForm = () => {
             name="phone"
             required
             placeholder="Phone Number"
+            value={formData.phone}
+            onChange={handleChange}
             className="
               w-full px-4 py-3
               bg-transparent
@@ -145,6 +199,8 @@ const ContactForm = () => {
             required
             rows="5"
             placeholder="Your message..."
+            value={formData.message}
+            onChange={handleChange}
             className="
               w-full px-4 py-3
               bg-transparent
@@ -182,6 +238,7 @@ const ContactForm = () => {
         {/* SUBMIT BUTTON */}
         <button
           type="submit"
+          disabled={isSubmitting}
           className="
             w-full py-4
             border border-(--brand-accent)
@@ -190,10 +247,11 @@ const ContactForm = () => {
             flex items-center justify-center gap-2
             transition duration-200
             hover:opacity-80 hover:scale-[1.02]
+            disabled:opacity-50 disabled:cursor-not-allowed
           "
         >
           <IoMdSend />
-          SEND MESSAGE
+          {isSubmitting ? 'SENDING...' : 'SEND MESSAGE'}
         </button>
       </form>
     </div>

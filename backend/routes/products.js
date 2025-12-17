@@ -1,14 +1,29 @@
 const express = require('express');
 const router = express.Router();
-const Product = require('../../database/Product');
+const Product = require('../models/Product');
 const authMiddleware = require('../middleware/authMiddleware');
 
-// Get all products
+// Get all products with optional filters
 router.get('/', async (req, res) => {
     try {
-        const products = await Product.find({ status: 'active' });
+        const { category, color, finish } = req.query;
+        let query = { status: 'active' };
+        
+        if (category) {
+            // Match category case-insensitively
+            query.category = { $regex: new RegExp(category.replace(/-/g, ' '), 'i') };
+        }
+        if (color) {
+            query.color = { $regex: new RegExp(color, 'i') };
+        }
+        if (finish) {
+            query.finish = { $regex: new RegExp(finish, 'i') };
+        }
+        
+        const products = await Product.find(query);
         res.json(products);
     } catch (err) {
+        console.error('Error fetching products:', err);
         res.status(500).json({ message: 'Server error' });
     }
 });

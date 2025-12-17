@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const AdminUser = require('../../database/AdminUser');
+const AdminUser = require('../models/AdminUser');
 const authMiddleware = require('../middleware/authMiddleware');
 
 // Register (Initial setup only, should be protected or removed later)
@@ -21,7 +21,8 @@ router.post('/register', async (req, res) => {
         const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1d' });
         res.json({ token });
     } catch (err) {
-        res.status(500).json({ message: 'Server error' });
+        console.error('Register error:', err);
+        res.status(500).json({ message: 'Server error', error: err.message });
     }
 });
 
@@ -38,6 +39,7 @@ router.post('/login', async (req, res) => {
         const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1d' });
         res.json({ token });
     } catch (err) {
+        console.error('Login error:', err);
         res.status(500).json({ message: 'Server error' });
     }
 });
