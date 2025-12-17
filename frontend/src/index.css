@@ -11,52 +11,64 @@
 html, body {
   scroll-behavior: smooth;
   background: var(--brand-bg);
-  color: var(--brand-accent);   /* ✅ ALL TEXT THIS COLOR */
+  color: var(--brand-accent);
   font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
   margin: 0;
   padding: 0;
 }
 
-/* ✅ Force all text elements to use brand color (exclude admin) */
-:not(.admin-panel) > *,
-:not(.admin-panel) h1, 
-:not(.admin-panel) h2, 
-:not(.admin-panel) h3, 
-:not(.admin-panel) h4, 
-:not(.admin-panel) h5, 
-:not(.admin-panel) h6,
-:not(.admin-panel) p, 
-:not(.admin-panel) span, 
-:not(.admin-panel) a, 
-:not(.admin-panel) li, 
-:not(.admin-panel) button, 
-:not(.admin-panel) label, 
-:not(.admin-panel) input {
+/* ✅ Force all text elements to use brand color - EXCEPT admin panel */
+body:not(:has(.admin-panel)) *,
+body:not(:has(.admin-panel)) h1, 
+body:not(:has(.admin-panel)) h2, 
+body:not(:has(.admin-panel)) h3, 
+body:not(:has(.admin-panel)) h4, 
+body:not(:has(.admin-panel)) h5, 
+body:not(:has(.admin-panel)) h6,
+body:not(:has(.admin-panel)) p, 
+body:not(:has(.admin-panel)) span, 
+body:not(:has(.admin-panel)) a, 
+body:not(:has(.admin-panel)) li, 
+body:not(:has(.admin-panel)) button, 
+body:not(:has(.admin-panel)) label {
   color: var(--brand-accent);
 }
 
-/* Admin panel reset - allow custom colors */
-.admin-panel {
-  background: #1a1a1a;
+/* ✅ ADMIN PANEL - Complete Style Reset */
+.admin-panel,
+.admin-panel * {
+  color: unset;
 }
 
-/* Admin panel specific text colors */
-.admin-panel .text-white,
-.admin-panel [style*="color: #ffffff"],
-.admin-panel [style*="color:#ffffff"] {
+.admin-panel {
+  background: #1a1a1a !important;
+}
+
+/* Force white text in admin panel */
+.admin-panel h1 span:last-child,
+.admin-panel h2:not(.text-\[\#d4a853\]),
+.admin-panel label,
+.admin-panel a:not(.text-\[\#d4a853\]) {
   color: #ffffff !important;
 }
 
-.admin-panel .text-\[\#d4a853\] {
+/* Gold accent text */
+.admin-panel .text-\[\#d4a853\],
+.admin-panel h1 span:first-child {
   color: #d4a853 !important;
 }
 
+/* Gray text variants */
 .admin-panel .text-gray-400 {
   color: #9ca3af !important;
 }
 
 .admin-panel .text-gray-300 {
   color: #d1d5db !important;
+}
+
+.admin-panel .text-red-400 {
+  color: #f87171 !important;
 }
 
 .admin-panel .text-red-400 {
