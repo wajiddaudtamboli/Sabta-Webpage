@@ -1,4 +1,6 @@
 import { IoMdSend } from "react-icons/io";
+import { HiLocationMarker } from "react-icons/hi";
+import { BsTelephoneFill, BsEnvelopeFill } from "react-icons/bs";
 import { useState, useEffect } from "react";
 import { api } from "../api/api";
 
@@ -65,23 +67,29 @@ const ContactForm = () => {
 
       {/* Contact Information Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-        <div className="bg-gradient-to-br from-[#1a1a1a] to-[#2a2a2a] p-6 rounded-xl border border-gray-700">
-          <div className="text-[#d4a853] text-2xl mb-3">📍</div>
-          <h3 className="font-semibold mb-2">Address</h3>
+        <div className="bg-gradient-to-br from-[#1a1a1a] to-[#2a2a2a] p-6 rounded-xl border border-gray-700 text-center">
+          <div className="flex justify-center mb-3">
+            <HiLocationMarker className="text-[#d4a853] text-3xl" />
+          </div>
+          <h3 className="font-semibold mb-2 text-[#d4a853]">Address</h3>
           <p className="text-gray-400 text-sm">{info.address}</p>
         </div>
         
-        <div className="bg-gradient-to-br from-[#1a1a1a] to-[#2a2a2a] p-6 rounded-xl border border-gray-700">
-          <div className="text-[#d4a853] text-2xl mb-3">📞</div>
-          <h3 className="font-semibold mb-2">Phone</h3>
+        <div className="bg-gradient-to-br from-[#1a1a1a] to-[#2a2a2a] p-6 rounded-xl border border-gray-700 text-center">
+          <div className="flex justify-center mb-3">
+            <BsTelephoneFill className="text-[#d4a853] text-2xl" />
+          </div>
+          <h3 className="font-semibold mb-2 text-[#d4a853]">Phone</h3>
           <a href={`tel:${info.phone}`} className="text-gray-400 text-sm hover:text-[#d4a853] transition-colors">
             {info.phone}
           </a>
         </div>
         
-        <div className="bg-gradient-to-br from-[#1a1a1a] to-[#2a2a2a] p-6 rounded-xl border border-gray-700">
-          <div className="text-[#d4a853] text-2xl mb-3">✉️</div>
-          <h3 className="font-semibold mb-2">Email</h3>
+        <div className="bg-gradient-to-br from-[#1a1a1a] to-[#2a2a2a] p-6 rounded-xl border border-gray-700 text-center">
+          <div className="flex justify-center mb-3">
+            <BsEnvelopeFill className="text-[#d4a853] text-2xl" />
+          </div>
+          <h3 className="font-semibold mb-2 text-[#d4a853]">Email</h3>
           <a href={`mailto:${info.email}`} className="text-gray-400 text-sm hover:text-[#d4a853] transition-colors">
             {info.email}
           </a>
