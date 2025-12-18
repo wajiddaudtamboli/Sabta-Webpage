@@ -33,6 +33,33 @@ const Pages = () => {
         { id: 'contact', name: 'Contact Page', icon: <ContactIcon /> },
     ];
 
+    // Default content structures
+    const defaultContent = {
+        home: {
+            heroSlides: [
+                { heading: "Where Nature's Beauty Meets Expert Craftsmanship", subtext: "Premium stone solutions", image: "", button: "Get Started" },
+                { heading: "Premium Marble and Stone Designed to Elevate Your Interiors", subtext: "Solutions tailored for your brand", image: "", button: "View Services" },
+                { heading: "Classic Design and Enduring Strength for Modern Spaces", subtext: "Delivering quality, speed & results", image: "", button: "Contact Us" }
+            ],
+            introTitle: "Why Sabta Granite Is the UAE's Trusted Choice for Premium Marble and Natural Stone",
+            introText: "Marble brings a sense of luxury, elegance and lasting beauty to any space. At Sabta Granite, we supply a wide range of natural and engineered surfaces to projects across the UAE.",
+            introImage: ""
+        },
+        about: {
+            title: "About Us",
+            whoWeAre: "Founded in 2003, SABTA is one of the UAE's most trusted suppliers of natural stone...",
+            capabilities: "All fabrication and finishing processes are managed in-house...",
+            globalSourcing: "Our materials are sourced from the finest quarries worldwide..."
+        },
+        contact: {
+            title: "Contact Us",
+            address: "Dubai, UAE",
+            phone: "+971 XXXXXXXXX",
+            email: "info@sabtagranite.com",
+            mapUrl: ""
+        }
+    };
+
     useEffect(() => {
         fetchPageData(selectedPage);
     }, [selectedPage]);
@@ -42,12 +69,15 @@ const Pages = () => {
         setMessage({ type: '', text: '' });
         try {
             const res = await api.get(`/pages/${pageName}`);
-            setPageData(res.data);
+            // Merge with defaults to ensure all fields exist
+            const content = { ...defaultContent[pageName], ...res.data?.content };
+            setPageData({ ...res.data, content });
         } catch (err) {
             if (err.response && err.response.status === 404) {
-                setPageData({ name: pageName, content: {} });
+                setPageData({ name: pageName, content: defaultContent[pageName] });
             } else {
                 console.error('Error fetching page:', err);
+                setPageData({ name: pageName, content: defaultContent[pageName] });
             }
         } finally {
             setLoading(false);
@@ -59,10 +89,11 @@ const Pages = () => {
         setSaving(true);
         try {
             await api.put(`/pages/${selectedPage}`, pageData);
-            setMessage({ type: 'success', text: 'Page saved successfully!' });
+            setMessage({ type: 'success', text: 'Page saved successfully! Changes will reflect on the website.' });
+            setTimeout(() => setMessage({ type: '', text: '' }), 3000);
         } catch (err) {
             console.error('Error saving page:', err);
-            setMessage({ type: 'error', text: 'Error saving page' });
+            setMessage({ type: 'error', text: 'Error saving page. Please try again.' });
         } finally {
             setSaving(false);
         }
@@ -76,6 +107,12 @@ const Pages = () => {
                 [key]: value
             }
         });
+    };
+
+    const handleSlideChange = (index, field, value) => {
+        const newSlides = [...(pageData.content.heroSlides || [])];
+        newSlides[index] = { ...newSlides[index], [field]: value };
+        handleContentChange('heroSlides', newSlides);
     };
 
     const InputField = ({ label, value, onChange, type = 'text', placeholder = '' }) => (
@@ -106,10 +143,12 @@ const Pages = () => {
 
     return (
         <div className="text-white">
-            <h1 className="text-3xl font-bold mb-8">Page Manager</h1>
+            <h1 className="text-3xl font-bold mb-8">
+                <span className="text-[#d4a853]">Dynamic</span> Page Manager
+            </h1>
 
             {message.text && (
-                <div className={`p-4 rounded mb-6 ${message.type === 'success' ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'}`}>
+                <div className={`p-4 rounded mb-6 ${message.type === 'success' ? 'bg-green-900/50 border border-green-500 text-green-300' : 'bg-red-900/50 border border-red-500 text-red-300'}`}>
                     {message.text}
                 </div>
             )}
@@ -134,6 +173,10 @@ const Pages = () => {
                             </button>
                         ))}
                     </div>
+                    
+                    <div className="mt-6 p-3 bg-blue-900/30 border border-blue-700 rounded text-sm text-blue-300">
+                        <strong>Tip:</strong> Changes saved here will immediately update your website content.
+                    </div>
                 </div>
 
                 {/* Page Editor */}
@@ -143,39 +186,71 @@ const Pages = () => {
                     ) : pageData && (
                         <>
                             <h2 className="text-xl font-semibold mb-6 text-[#d4a853] capitalize">
-                                Edit {selectedPage} Page
+                                Edit {selectedPage} Page Content
                             </h2>
                             <form onSubmit={handleSave}>
+                                {/* HOME PAGE EDITOR */}
                                 {selectedPage === 'home' && (
                                     <>
-                                        <InputField
-                                            label="Hero Title"
-                                            value={pageData.content.heroText}
-                                            onChange={(e) => handleContentChange('heroText', e.target.value)}
-                                            placeholder="Enter hero title..."
-                                        />
-                                        <InputField
-                                            label="Hero Subtitle"
-                                            value={pageData.content.subText}
-                                            onChange={(e) => handleContentChange('subText', e.target.value)}
-                                            placeholder="Enter subtitle..."
-                                        />
-                                        <InputField
-                                            label="Banner Image URL"
-                                            value={pageData.content.bannerImage}
-                                            onChange={(e) => handleContentChange('bannerImage', e.target.value)}
-                                            placeholder="https://..."
-                                        />
-                                        <TextAreaField
-                                            label="Welcome Section Text"
-                                            value={pageData.content.welcomeText}
-                                            onChange={(e) => handleContentChange('welcomeText', e.target.value)}
-                                            rows={4}
-                                            placeholder="Enter welcome text..."
-                                        />
+                                        {/* Hero Slides Section */}
+                                        <div className="mb-8">
+                                            <h3 className="text-lg font-semibold text-white mb-4 border-b border-gray-700 pb-2">
+                                                Hero Banner Slides
+                                            </h3>
+                                            {(pageData.content.heroSlides || defaultContent.home.heroSlides).map((slide, index) => (
+                                                <div key={index} className="bg-[#1a1a1a] p-4 rounded mb-4 border border-gray-700">
+                                                    <h4 className="text-[#d4a853] mb-3">Slide {index + 1}</h4>
+                                                    <InputField
+                                                        label="Heading"
+                                                        value={slide.heading}
+                                                        onChange={(e) => handleSlideChange(index, 'heading', e.target.value)}
+                                                        placeholder="Enter slide heading..."
+                                                    />
+                                                    <InputField
+                                                        label="Subtext"
+                                                        value={slide.subtext}
+                                                        onChange={(e) => handleSlideChange(index, 'subtext', e.target.value)}
+                                                        placeholder="Enter subtext..."
+                                                    />
+                                                    <InputField
+                                                        label="Background Image URL (optional - leave empty for default)"
+                                                        value={slide.image}
+                                                        onChange={(e) => handleSlideChange(index, 'image', e.target.value)}
+                                                        placeholder="https://... (Cloudinary URL recommended)"
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        {/* Introduction Section */}
+                                        <div className="mb-8">
+                                            <h3 className="text-lg font-semibold text-white mb-4 border-b border-gray-700 pb-2">
+                                                Introduction Section
+                                            </h3>
+                                            <InputField
+                                                label="Section Title"
+                                                value={pageData.content.introTitle}
+                                                onChange={(e) => handleContentChange('introTitle', e.target.value)}
+                                                placeholder="Enter introduction title..."
+                                            />
+                                            <TextAreaField
+                                                label="Introduction Text"
+                                                value={pageData.content.introText}
+                                                onChange={(e) => handleContentChange('introText', e.target.value)}
+                                                rows={5}
+                                                placeholder="Enter introduction paragraph..."
+                                            />
+                                            <InputField
+                                                label="Introduction Image URL"
+                                                value={pageData.content.introImage}
+                                                onChange={(e) => handleContentChange('introImage', e.target.value)}
+                                                placeholder="https://... (Cloudinary URL)"
+                                            />
+                                        </div>
                                     </>
                                 )}
 
+                                {/* ABOUT PAGE EDITOR */}
                                 {selectedPage === 'about' && (
                                     <>
                                         <InputField
@@ -185,29 +260,30 @@ const Pages = () => {
                                             placeholder="About Us"
                                         />
                                         <TextAreaField
-                                            label="Company Description"
-                                            value={pageData.content.description}
-                                            onChange={(e) => handleContentChange('description', e.target.value)}
+                                            label="Who We Are Section"
+                                            value={pageData.content.whoWeAre}
+                                            onChange={(e) => handleContentChange('whoWeAre', e.target.value)}
                                             rows={6}
                                             placeholder="Enter company description..."
                                         />
                                         <TextAreaField
-                                            label="Our Mission"
-                                            value={pageData.content.mission}
-                                            onChange={(e) => handleContentChange('mission', e.target.value)}
+                                            label="Comprehensive Capabilities"
+                                            value={pageData.content.capabilities}
+                                            onChange={(e) => handleContentChange('capabilities', e.target.value)}
                                             rows={4}
-                                            placeholder="Enter mission statement..."
+                                            placeholder="Enter capabilities description..."
                                         />
                                         <TextAreaField
-                                            label="Our Vision"
-                                            value={pageData.content.vision}
-                                            onChange={(e) => handleContentChange('vision', e.target.value)}
+                                            label="Global Sourcing"
+                                            value={pageData.content.globalSourcing}
+                                            onChange={(e) => handleContentChange('globalSourcing', e.target.value)}
                                             rows={4}
-                                            placeholder="Enter vision statement..."
+                                            placeholder="Enter global sourcing description..."
                                         />
                                     </>
                                 )}
 
+                                {/* CONTACT PAGE EDITOR */}
                                 {selectedPage === 'contact' && (
                                     <>
                                         <InputField
@@ -216,23 +292,30 @@ const Pages = () => {
                                             onChange={(e) => handleContentChange('title', e.target.value)}
                                             placeholder="Contact Us"
                                         />
-                                        <InputField
+                                        <TextAreaField
                                             label="Address"
                                             value={pageData.content.address}
                                             onChange={(e) => handleContentChange('address', e.target.value)}
-                                            placeholder="Enter address..."
+                                            rows={3}
+                                            placeholder="Enter full address..."
                                         />
                                         <InputField
                                             label="Phone Number"
                                             value={pageData.content.phone}
                                             onChange={(e) => handleContentChange('phone', e.target.value)}
-                                            placeholder="+91 xxxxxxxxxx"
+                                            placeholder="+971 XXXXXXXXX"
                                         />
                                         <InputField
-                                            label="Email"
+                                            label="Email Address"
                                             value={pageData.content.email}
                                             onChange={(e) => handleContentChange('email', e.target.value)}
-                                            placeholder="info@example.com"
+                                            placeholder="info@sabtagranite.com"
+                                        />
+                                        <InputField
+                                            label="WhatsApp Number"
+                                            value={pageData.content.whatsapp}
+                                            onChange={(e) => handleContentChange('whatsapp', e.target.value)}
+                                            placeholder="+971XXXXXXXXX (no spaces)"
                                         />
                                         <InputField
                                             label="Google Maps Embed URL"
@@ -243,13 +326,20 @@ const Pages = () => {
                                     </>
                                 )}
 
-                                <div className="mt-6">
+                                <div className="mt-6 flex gap-4">
                                     <button 
                                         type="submit" 
                                         disabled={saving}
                                         className="px-6 py-3 bg-[#d4a853] text-black font-semibold rounded hover:bg-[#c49743] transition-colors disabled:opacity-50 cursor-pointer"
                                     >
                                         {saving ? 'Saving...' : 'Save Changes'}
+                                    </button>
+                                    <button 
+                                        type="button"
+                                        onClick={() => fetchPageData(selectedPage)}
+                                        className="px-6 py-3 bg-gray-700 text-white font-semibold rounded hover:bg-gray-600 transition-colors cursor-pointer"
+                                    >
+                                        Reset
                                     </button>
                                 </div>
                             </form>

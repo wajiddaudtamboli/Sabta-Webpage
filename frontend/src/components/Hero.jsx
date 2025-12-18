@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { api } from "../api/api";
 
 import {
   Navigation,
@@ -21,11 +22,13 @@ import Quartz from "../assets/BannerImages/Quartz.jpeg";
 
 const Hero = () => {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [heroData, setHeroData] = useState(null);
 
-  const slides = [
+  // Default slides (fallback)
+  const defaultSlides = [
     {
       img: Marble,
-      heading: "Where Nature’s Beauty Meets Expert Craftsmanship",
+      heading: "Where Nature's Beauty Meets Expert Craftsmanship",
       sub: "We create modern, high-performing websites.",
       button: "Get Started"
     },
@@ -43,6 +46,30 @@ const Hero = () => {
     },
   ];
 
+  useEffect(() => {
+    const fetchHeroData = async () => {
+      try {
+        const res = await api.get('/pages/home');
+        if (res.data?.content) {
+          setHeroData(res.data.content);
+        }
+      } catch (err) {
+        console.error("Error fetching hero data:", err);
+      }
+    };
+    fetchHeroData();
+  }, []);
+
+  // Use dynamic slides if available, otherwise use defaults
+  const slides = heroData?.heroSlides?.length > 0 
+    ? heroData.heroSlides.map((slide, i) => ({
+        img: slide.image || defaultSlides[i]?.img || Marble,
+        heading: slide.heading || defaultSlides[i]?.heading,
+        sub: slide.subtext || defaultSlides[i]?.sub,
+        button: slide.button || defaultSlides[i]?.button
+      }))
+    : defaultSlides;
+
   return (
     <div className="w-full h-screen relative overflow-hidden">
       <Swiper
@@ -57,43 +84,32 @@ const Hero = () => {
         }}
         pagination={{ clickable: true }}
         fadeEffect={{ crossFade: true }}
-        onSlideChange={(swiper) => setActiveIndex(swiper.realIndex)} // ✅ Re-trigger animation
+        onSlideChange={(swiper) => setActiveIndex(swiper.realIndex)}
       >
         {slides.map((slide, i) => (
           <SwiperSlide key={i}>
             <div
-  className="w-full h-screen bg-cover bg-center flex items-center 
-             justify-center md:justify-start relative"
-  style={{ backgroundImage: `url(${slide.img})` }}
->
-  {/* Dark Overlay */}
-  <div className="absolute inset-0 bg-black/50"></div>
+              className="w-full h-screen bg-cover bg-center flex items-center justify-center md:justify-start relative"
+              style={{ backgroundImage: `url(${slide.img})` }}
+            >
+              {/* Dark Overlay */}
+              <div className="absolute inset-0 bg-black/50"></div>
 
-  {/* Text Block */}
-  <div
-    key={activeIndex}
-    className="relative px-4 sm:px-6 md:pl-16 max-w-xl
-               animate-fade-slide
-               text-center md:text-left"
-  >
-    <div className="mt-3 text-base sm:text-lg drop-shadow-xl flex items-center gap-3 justify-center md:justify-start mb-5">
-  <div className="h-px w-10 bg-(--brand-accent)"></div>
-  <span className="uppercase">welcome to sabta granite</span>
-</div>
+              {/* Text Block */}
+              <div
+                key={activeIndex}
+                className="relative px-4 sm:px-6 md:pl-16 max-w-xl animate-fade-slide text-center md:text-left"
+              >
+                <div className="mt-3 text-base sm:text-lg drop-shadow-xl flex items-center gap-3 justify-center md:justify-start mb-5">
+                  <div className="h-px w-10 bg-(--brand-accent)"></div>
+                  <span className="uppercase">welcome to sabta granite</span>
+                </div>
 
-    <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold drop-shadow-xl leading-tight">
-      {slide.heading}
-    </h1>
-
-    
-
-    {/* <button className="mt-5 sm:mt-6 bg-(--brand-bg) text-(--brand-accent) px-5 sm:px-6 py-2.5 sm:py-3 rounded-full font-semibold hover:scale-105 transition-transform duration-300 shadow-lg">
-      {slide.button}
-    </button> */}
-  </div>
-</div>
-
-
+                <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold drop-shadow-xl leading-tight">
+                  {slide.heading}
+                </h1>
+              </div>
+            </div>
           </SwiperSlide>
         ))}
       </Swiper>
