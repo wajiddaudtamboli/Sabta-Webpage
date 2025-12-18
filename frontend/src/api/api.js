@@ -53,3 +53,6 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+// Default export for convenience
+export default api;

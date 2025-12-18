@@ -5,6 +5,7 @@ const MediaSchema = new mongoose.Schema({
     filename: String,
     type: String, // e.g., 'image/jpeg'
     size: Number,
+    cloudinaryId: String, // For Cloudinary uploads
     createdAt: { type: Date, default: Date.now }
 });
 

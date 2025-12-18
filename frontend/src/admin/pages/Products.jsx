@@ -1157,10 +1157,17 @@ function Products() {
             {/* Image Modal */}
             {showImageModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                    <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
                         <h3 className="text-lg font-semibold mb-4 text-gray-800">
                             {editingImage ? 'Edit Image' : 'Add Image'}
                         </h3>
+                        
+                        {/* Info Box */}
+                        <div className="bg-blue-50 border border-blue-200 rounded p-3 mb-4">
+                            <p className="text-sm text-blue-800">
+                                <strong>Tip:</strong> Upload your images to <a href="https://cloudinary.com" target="_blank" rel="noopener noreferrer" className="underline">Cloudinary</a> or <a href="https://imgbb.com" target="_blank" rel="noopener noreferrer" className="underline">ImgBB</a> and paste the URL below.
+                            </p>
+                        </div>
                         
                         <div className="mb-4">
                             <label className="block text-sm font-medium text-gray-700 mb-1">Image URL *</label>
@@ -1169,30 +1176,39 @@ function Products() {
                                 value={imageToAdd.url}
                                 onChange={(e) => setImageToAdd(prev => ({ ...prev, url: e.target.value }))}
                                 className="w-full border rounded px-3 py-2 text-gray-800"
-                                placeholder="https://..."
+                                placeholder="https://res.cloudinary.com/... or https://i.ibb.co/..."
                             />
                         </div>
                         
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Or Upload Image</label>
+                        <div className="mb-4 p-3 bg-gray-50 rounded border border-dashed border-gray-300">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Or Try Direct Upload</label>
                             <input
                                 type="file"
                                 accept="image/*"
                                 onChange={handleImageUpload}
-                                className="w-full text-gray-800"
+                                className="w-full text-gray-800 text-sm"
                                 disabled={uploading}
                             />
-                            {uploading && <p className="text-sm text-gray-500 mt-1">Uploading...</p>}
+                            {uploading && (
+                                <p className="text-sm text-blue-500 mt-1 flex items-center">
+                                    <svg className="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                                    </svg>
+                                    Uploading...
+                                </p>
+                            )}
+                            <p className="text-xs text-gray-500 mt-1">Note: Direct upload requires server configuration</p>
                         </div>
                         
                         <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Description (Optional)</label>
                             <input
                                 type="text"
                                 value={imageToAdd.description}
                                 onChange={(e) => setImageToAdd(prev => ({ ...prev, description: e.target.value }))}
                                 className="w-full border rounded px-3 py-2 text-gray-800"
-                                placeholder="Image description..."
+                                placeholder="e.g., Front view, Detail shot..."
                             />
                         </div>
                         
@@ -1204,14 +1220,23 @@ function Products() {
                                     onChange={(e) => setImageToAdd(prev => ({ ...prev, isNewArrival: e.target.checked }))}
                                     className="mr-2"
                                 />
-                                Show as New Arrival
+                                Mark as New Arrival
                             </label>
                         </div>
                         
                         {imageToAdd.url && (
                             <div className="mb-4">
                                 <p className="text-sm text-gray-500 mb-1">Preview:</p>
-                                <img src={imageToAdd.url} alt="Preview" className="w-32 h-32 object-cover rounded" />
+                                <img 
+                                    src={imageToAdd.url} 
+                                    alt="Preview" 
+                                    className="w-32 h-32 object-cover rounded border"
+                                    onError={(e) => {
+                                        e.target.style.display = 'none';
+                                        e.target.nextSibling.style.display = 'block';
+                                    }}
+                                />
+                                <p className="text-red-500 text-sm hidden">Invalid image URL</p>
                             </div>
                         )}
                         
@@ -1219,9 +1244,14 @@ function Products() {
                             <button
                                 type="button"
                                 onClick={handleSaveImage}
-                                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
+                                disabled={!imageToAdd.url}
+                                className={`px-4 py-2 rounded font-medium ${
+                                    imageToAdd.url 
+                                        ? 'bg-green-600 hover:bg-green-700 text-white' 
+                                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                }`}
                             >
-                                {editingImage ? 'Update' : 'Add'}
+                                {editingImage ? 'Update' : 'Add Image'}
                             </button>
                             <button
                                 type="button"
