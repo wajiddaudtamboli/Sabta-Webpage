@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { HiCamera, HiPhotograph } from 'react-icons/hi';
 import { api } from '../../api/api';
 
 const Media = () => {
@@ -63,7 +64,10 @@ const Media = () => {
         <div style={{color: '#ffffff'}}>
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                <h1 className="text-xl sm:text-3xl font-bold" style={{color: '#ffffff'}}>📷 Media Manager</h1>
+                <h1 className="text-xl sm:text-3xl font-bold flex items-center gap-3" style={{color: '#ffffff'}}>
+                    <HiCamera className="text-[#d4a853]" />
+                    Media Manager
+                </h1>
                 <div className="flex gap-2">
                     <button
                         onClick={() => setView('grid')}
@@ -116,7 +120,9 @@ const Media = () => {
                 <div className="text-center py-12" style={{color: '#9ca3af'}}>⏳ Loading media...</div>
             ) : mediaList.length === 0 ? (
                 <div className="text-center py-12 bg-[#2a2a2a] rounded-lg border border-gray-700">
-                    <div className="text-6xl mb-4">🖼️</div>
+                    <div className="text-6xl mb-4">
+                        <HiPhotograph className="text-[#d4a853] w-16 h-16 mx-auto" />
+                    </div>
                     <p style={{color: '#9ca3af'}}>No media uploaded yet</p>
                     <p className="text-sm mt-2" style={{color: '#6b7280'}}>Add an image URL above to get started</p>
                 </div>
@@ -233,7 +239,10 @@ const Media = () => {
                     >
                         {/* Modal Header */}
                         <div className="flex justify-between items-center p-4 border-b border-gray-700">
-                            <h3 className="text-base sm:text-lg font-semibold" style={{color: '#d4a853'}}>📷 Media Details</h3>
+                            <h3 className="text-base sm:text-lg font-semibold flex items-center gap-2" style={{color: '#d4a853'}}>
+                                <HiCamera />
+                                Media Details
+                            </h3>
                             <button 
                                 onClick={() => setSelectedMedia(null)} 
                                 className="p-2 hover:bg-[#3a3a3a] rounded cursor-pointer text-xl"
