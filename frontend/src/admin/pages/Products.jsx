@@ -198,9 +198,15 @@ const Products = () => {
         if (!files || files.length === 0) return;
         
         setLoading(true);
+        console.log('Starting image upload...', files.length, 'files');
+        
         try {
+            const uploadedImages = [];
+            
             for (let i = 0; i < files.length; i++) {
                 const file = files[i];
+                console.log('Uploading file:', file.name, 'Size:', file.size);
+                
                 const uploadFormData = new FormData();
                 uploadFormData.append('file', file);
                 
@@ -208,14 +214,21 @@ const Products = () => {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
                 
+                console.log('Upload response:', response.data);
+                
                 if (response.data.url) {
+                    uploadedImages.push(response.data.url);
                     setProductImages(prev => [...prev, response.data.url]);
                 }
             }
-            alert('Image(s) uploaded successfully!');
+            
+            alert(`Successfully uploaded ${uploadedImages.length} image(s)!`);
+            console.log('All images uploaded successfully');
         } catch (error) {
             console.error('Error uploading image:', error);
-            alert('Error uploading image: ' + (error.response?.data?.message || error.message));
+            console.error('Error response:', error.response?.data);
+            const errorMsg = error.response?.data?.message || error.message || 'Unknown error occurred';
+            alert(`Failed to upload image: ${errorMsg}\n\nPlease check your internet connection and try again.`);
         } finally {
             setLoading(false);
             // Reset file input
