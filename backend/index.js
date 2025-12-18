@@ -25,6 +25,7 @@ const startServer = async () => {
         app.use('/api/auth', require('./routes/auth'));
         app.use('/api/pages', require('./routes/pages'));
         app.use('/api/products', require('./routes/products'));
+        app.use('/api/collections', require('./routes/collections'));
         app.use('/api/blogs', require('./routes/blogs'));
         app.use('/api/enquiries', require('./routes/enquiries'));
         app.use('/api/media', require('./routes/media'));

@@ -468,15 +468,21 @@ const CollectionDetail = () => {
       </section>
       {/* PRODUCT GRID WITH HOVER EFFECT */}
       <section className="px-6 sm:px-10 md:px-16 lg:px-20 pb-20">
-        <h2 className="text-xl sm:text-2xl font-semibold mb-6"></h2>
+        <h2 className="text-xl sm:text-2xl font-semibold mb-6">
+          {loading ? 'Loading products...' : `${products.length > 0 ? products.length : sampleProducts.length} Products`}
+        </h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-5 gap-x-6 gap-y-20">
-          {sampleProducts.map((p) => (
-            <div key={p._id} className="mx-auto w-full max-w-[230px]">
+          {(products.length > 0 ? products : sampleProducts).map((p) => (
+            <Link 
+              key={p._id} 
+              to={`/product/${p._id}`}
+              className="mx-auto w-full max-w-[230px] block"
+            >
               {/* TITLE ABOVE IMAGE */}
               <div className="text-center mb-3">
                 <p className="text-lg font-semibold tracking-wide">
-                  {p.code || "8050"}
+                  {p.code || "---"}
                 </p>
 
                 <div
@@ -494,7 +500,7 @@ const CollectionDetail = () => {
                 {/* IMAGE */}
                 <div
                   className="absolute inset-0 bg-center bg-cover transition-transform duration-500 group-hover:scale-110"
-                  style={{ backgroundImage: `url(${p.image})` }}
+                  style={{ backgroundImage: `url(${p.images?.[0] || p.productImages?.[0]?.url || p.image || Marble1})` }}
                 ></div>
 
                 {/* OVERLAY */}
@@ -525,23 +531,31 @@ const CollectionDetail = () => {
       "
                 >
                   <h3 className="text-sm sm:text-base font-bold uppercase">
-                    Elegance is Hidden in the Details
+                    {p.description ? p.description.substring(0, 50) + '...' : 'Elegance is Hidden in the Details'}
                   </h3>
 
                   <div className="h-10 w-px bg-(--brand-accent) my-3"></div>
 
                   <p className="text-xs sm:text-sm leading-relaxed">
-                    Adds strong and characterful elegance with veining details.
+                    {p.color && p.finish ? `${p.color} • ${p.finish}` : 'Adds strong and characterful elegance with veining details.'}
                   </p>
 
-                  <button className="mt-4 flex items-center gap-2 bg-(--brand-bg) text-(--brand-accent) px-4 py-1 rounded-full font-semibold text-xs sm:text-sm">
+                  <span className="mt-4 flex items-center gap-2 bg-(--brand-bg) text-(--brand-accent) px-4 py-1 rounded-full font-semibold text-xs sm:text-sm">
                     VIEW →
-                  </button>
+                  </span>
                 </div>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
+        
+        {!loading && products.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-lg text-gray-500">
+              No products found in this collection yet. Check back soon!
+            </p>
+          </div>
+        )}
       </section>
     </div>
   );

@@ -65,6 +65,7 @@ try {
     app.use('/api/auth', require(path.join(routesPath, 'auth')));
     app.use('/api/pages', require(path.join(routesPath, 'pages')));
     app.use('/api/products', require(path.join(routesPath, 'products')));
+    app.use('/api/collections', require(path.join(routesPath, 'collections')));
     app.use('/api/blogs', require(path.join(routesPath, 'blogs')));
     app.use('/api/enquiries', require(path.join(routesPath, 'enquiries')));
     app.use('/api/media', require(path.join(routesPath, 'media')));
