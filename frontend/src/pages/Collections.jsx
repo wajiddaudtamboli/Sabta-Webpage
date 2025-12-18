@@ -134,12 +134,13 @@ const Collections = () => {
               to={`/collections/${cat.slug || cat.name.toLowerCase().replace(/\s+/g, "-")}`}
             >
               <div
-                className="
+                className={`
                   relative h-72 sm:h-96 md:h-108
                   rounded-xl overflow-hidden
                   group cursor-pointer
-                  shadow-md hover:shadow-xl transition-shadow duration-300
-                "
+                  shadow-md hover:shadow-xl transition-all duration-300
+                  ${index === 0 ? 'lg:rotate-1 lg:hover:rotate-0' : ''}
+                `}
               >
                 {/* Background Image */}
                 <img
