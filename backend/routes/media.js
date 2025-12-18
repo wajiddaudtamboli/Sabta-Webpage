@@ -9,8 +9,8 @@ const path = require('path');
 // Configure Cloudinary
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'duhhsnbwh',
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET
+    api_key: process.env.CLOUDINARY_API_KEY || '952676858734238',
+    api_secret: process.env.CLOUDINARY_API_SECRET || 'A_U4r_HgQfdxPHY6hmn7sAFCdFs'
 });
 
 // Configure multer for memory storage
@@ -47,7 +47,8 @@ router.post('/upload', authMiddleware, upload.single('file'), async (req, res) =
         }
 
         // Check if Cloudinary is configured
-        if (!process.env.CLOUDINARY_API_KEY) {
+        const apiKey = process.env.CLOUDINARY_API_KEY || '952676858734238';
+        if (!apiKey) {
             // If no Cloudinary config, return error with suggestion
             return res.status(400).json({ 
                 message: 'Image upload not configured. Please paste a Cloudinary URL instead.',
