@@ -142,20 +142,20 @@ const Pages = () => {
     );
 
     return (
-        <div className="text-white">
-            <h1 className="text-3xl font-bold mb-8">
+        <div className="text-white max-w-full">
+            <h1 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8 px-4 md:px-0">
                 <span className="text-[#d4a853]">Dynamic</span> Page Manager
             </h1>
 
             {message.text && (
-                <div className={`p-4 rounded mb-6 ${message.type === 'success' ? 'bg-green-900/50 border border-green-500 text-green-300' : 'bg-red-900/50 border border-red-500 text-red-300'}`}>
+                <div className={`p-4 mx-4 md:mx-0 rounded mb-4 md:mb-6 text-sm md:text-base ${message.type === 'success' ? 'bg-green-900/50 border border-green-500 text-green-300' : 'bg-red-900/50 border border-red-500 text-red-300'}`}>
                     {message.text}
                 </div>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 md:gap-6">
                 {/* Page Selector */}
-                <div className="bg-[#2a2a2a] rounded border border-gray-700 p-4">
+                <div className="bg-[#2a2a2a] mx-4 md:mx-0 rounded border border-gray-700 p-4">
                     <h2 className="text-lg font-semibold mb-4 text-[#d4a853]">Select Page</h2>
                     <div className="space-y-2">
                         {pages.map(page => (
@@ -180,12 +180,12 @@ const Pages = () => {
                 </div>
 
                 {/* Page Editor */}
-                <div className="lg:col-span-3 bg-[#2a2a2a] rounded border border-gray-700 p-6">
+                <div className="lg:col-span-3 bg-[#2a2a2a] mx-4 md:mx-0 rounded border border-gray-700 p-4 md:p-6">
                     {loading ? (
                         <div className="text-center text-gray-400 py-8">Loading...</div>
                     ) : pageData && (
                         <>
-                            <h2 className="text-xl font-semibold mb-6 text-[#d4a853] capitalize">
+                            <h2 className="text-lg md:text-xl font-semibold mb-4 md:mb-6 text-[#d4a853] capitalize">
                                 Edit {selectedPage} Page Content
                             </h2>
                             <form onSubmit={handleSave}>

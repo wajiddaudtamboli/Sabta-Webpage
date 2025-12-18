@@ -57,12 +57,13 @@ const Enquiries = () => {
     );
 
     return (
-        <div className="text-white">
-            <h1 className="text-3xl font-bold mb-8">Enquiries</h1>
+        <div className="text-white max-w-full">
+            <h1 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8 px-4 md:px-0">Enquiries</h1>
             
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
                 {/* Enquiries List */}
-                <div className="lg:col-span-2 bg-[#2a2a2a] rounded border border-gray-700 overflow-hidden">
+                <div className="lg:col-span-2 bg-[#2a2a2a] mx-4 md:mx-0 rounded border border-gray-700 overflow-hidden">
+                    <div className="overflow-x-auto">
                     {loading ? (
                         <div className="p-8 text-center text-gray-400">Loading...</div>
                     ) : enquiries.length === 0 ? (
@@ -71,11 +72,11 @@ const Enquiries = () => {
                         <table className="w-full text-left">
                             <thead className="bg-[#1a1a1a]">
                                 <tr>
-                                    <th className="p-4 text-[#d4a853]">Name</th>
-                                    <th className="p-4 text-[#d4a853]">Email</th>
-                                    <th className="p-4 text-[#d4a853]">Status</th>
-                                    <th className="p-4 text-[#d4a853]">Date</th>
-                                    <th className="p-4 text-[#d4a853]">Actions</th>
+                                    <th className="p-2 md:p-4 text-[#d4a853] text-sm md:text-base">Name</th>
+                                    <th className="p-2 md:p-4 text-[#d4a853] text-sm md:text-base hidden sm:table-cell">Email</th>
+                                    <th className="p-2 md:p-4 text-[#d4a853] text-sm md:text-base">Status</th>
+                                    <th className="p-2 md:p-4 text-[#d4a853] text-sm md:text-base hidden md:table-cell">Date</th>
+                                    <th className="p-2 md:p-4 text-[#d4a853] text-sm md:text-base">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -87,9 +88,12 @@ const Enquiries = () => {
                                         }`}
                                         onClick={() => setSelectedEnquiry(enquiry)}
                                     >
-                                        <td className="p-4">{enquiry.name}</td>
-                                        <td className="p-4 text-gray-400">{enquiry.email}</td>
-                                        <td className="p-4">
+                                        <td className="p-2 md:p-4 text-sm md:text-base">
+                                            <div className="max-w-[120px] md:max-w-none truncate">{enquiry.name}</div>
+                                            <div className="sm:hidden text-xs text-gray-400 mt-1">{enquiry.email}</div>
+                                        </td>
+                                        <td className="p-2 md:p-4 text-gray-400 text-sm md:text-base hidden sm:table-cell">{enquiry.email}</td>
+                                        <td className="p-2 md:p-4">
                                             <span className={`px-2 py-1 rounded text-xs ${
                                                 enquiry.status === 'new' ? 'bg-blue-900 text-blue-300' :
                                                 enquiry.status === 'read' ? 'bg-yellow-900 text-yellow-300' :
@@ -98,10 +102,10 @@ const Enquiries = () => {
                                                 {enquiry.status}
                                             </span>
                                         </td>
-                                        <td className="p-4 text-gray-400 text-sm">
+                                        <td className="p-2 md:p-4 text-gray-400 text-xs md:text-sm hidden md:table-cell">
                                             {new Date(enquiry.createdAt).toLocaleDateString()}
                                         </td>
-                                        <td className="p-4">
+                                        <td className="p-2 md:p-4">
                                             <select
                                                 value={enquiry.status}
                                                 onChange={(e) => {
@@ -109,7 +113,7 @@ const Enquiries = () => {
                                                     handleStatusChange(enquiry._id, e.target.value);
                                                 }}
                                                 onClick={(e) => e.stopPropagation()}
-                                                className="p-1 bg-[#1a1a1a] border border-gray-600 rounded text-white text-sm"
+                                                className="p-1 bg-[#1a1a1a] border border-gray-600 rounded text-white text-xs md:text-sm w-full md:w-auto"
                                             >
                                                 <option value="new">New</option>
                                                 <option value="read">Read</option>
@@ -121,11 +125,12 @@ const Enquiries = () => {
                             </tbody>
                         </table>
                     )}
+                    </div>
                 </div>
 
                 {/* Enquiry Detail */}
-                <div className="bg-[#2a2a2a] rounded border border-gray-700 p-6">
-                    <h2 className="text-xl font-semibold mb-4 text-[#d4a853]">Enquiry Details</h2>
+                <div className="bg-[#2a2a2a] mx-4 md:mx-0 rounded border border-gray-700 p-4 md:p-6">
+                    <h2 className="text-lg md:text-xl font-semibold mb-4 text-[#d4a853]">Enquiry Details</h2>
                     {selectedEnquiry ? (
                         <div className="space-y-4">
                             <div>

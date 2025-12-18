@@ -103,11 +103,11 @@ const Blogs = () => {
     );
 
     return (
-        <div className="text-white">
-            <h1 className="text-3xl font-bold mb-8">Blogs</h1>
+        <div className="text-white max-w-full">
+            <h1 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8 px-4 md:px-0">Blogs</h1>
 
             {/* Form */}
-            <div className="bg-[#2a2a2a] p-6 rounded border border-gray-700 mb-8">
+            <div className="bg-[#2a2a2a] p-4 md:p-6 mx-4 md:mx-0 rounded border border-gray-700 mb-6 md:mb-8">
                 <h2 className="text-xl font-semibold mb-4 text-[#d4a853]">{isEditing ? 'Edit Blog' : 'Add New Blog'}</h2>
                 <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4">
                     <input
@@ -140,7 +140,7 @@ const Blogs = () => {
                         value={formData.featuredImage}
                         onChange={(e) => setFormData({ ...formData, featuredImage: e.target.value })}
                     />
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <input
                             type="text"
                             placeholder="Meta Title (SEO)"
@@ -178,7 +178,8 @@ const Blogs = () => {
             </div>
 
             {/* List */}
-            <div className="bg-[#2a2a2a] rounded border border-gray-700 overflow-hidden">
+            <div className="bg-[#2a2a2a] mx-4 md:mx-0 rounded border border-gray-700 overflow-hidden">
+                <div className="overflow-x-auto">
                 {loading ? (
                     <div className="p-8 text-center text-gray-400">Loading...</div>
                 ) : blogs.length === 0 ? (
@@ -187,20 +188,22 @@ const Blogs = () => {
                     <table className="w-full text-left">
                         <thead className="bg-[#1a1a1a]">
                             <tr>
-                                <th className="p-4 text-[#d4a853]">Title</th>
-                                <th className="p-4 text-[#d4a853]">Slug</th>
-                                <th className="p-4 text-[#d4a853]">Status</th>
-                                <th className="p-4 text-[#d4a853]">Created</th>
-                                <th className="p-4 text-[#d4a853]">Actions</th>
+                                <th className="p-3 md:p-4 text-[#d4a853] text-sm md:text-base">Title</th>
+                                <th className="p-3 md:p-4 text-[#d4a853] text-sm md:text-base hidden md:table-cell">Slug</th>
+                                <th className="p-3 md:p-4 text-[#d4a853] text-sm md:text-base">Status</th>
+                                <th className="p-3 md:p-4 text-[#d4a853] text-sm md:text-base hidden sm:table-cell">Created</th>
+                                <th className="p-3 md:p-4 text-[#d4a853] text-sm md:text-base">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {blogs.map(blog => (
                                 <tr key={blog._id} className="border-t border-gray-700 hover:bg-[#3a3a3a]">
-                                    <td className="p-4">{blog.title}</td>
-                                    <td className="p-4 text-gray-400">{blog.slug}</td>
-                                    <td className="p-4">
-                                        <span className={`px-2 py-1 rounded text-sm ${
+                                    <td className="p-2 md:p-4 text-sm md:text-base">
+                                        <div className="max-w-[150px] md:max-w-none truncate">{blog.title}</div>
+                                    </td>
+                                    <td className="p-2 md:p-4 text-gray-400 text-sm md:text-base hidden md:table-cell">{blog.slug}</td>
+                                    <td className="p-2 md:p-4">
+                                        <span className={`px-2 py-1 rounded text-xs md:text-sm ${
                                             blog.status === 'published' 
                                                 ? 'bg-green-900 text-green-300' 
                                                 : 'bg-yellow-900 text-yellow-300'
@@ -208,13 +211,13 @@ const Blogs = () => {
                                             {blog.status}
                                         </span>
                                     </td>
-                                    <td className="p-4 text-gray-400">
+                                    <td className="p-2 md:p-4 text-gray-400 text-xs md:text-base hidden sm:table-cell">
                                         {new Date(blog.createdAt).toLocaleDateString()}
                                     </td>
-                                    <td className="p-4">
-                                        <div className="flex gap-2">
+                                    <td className="p-2 md:p-4">
+                                        <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
                                             <ActionButton onClick={() => handleEdit(blog)}>Edit</ActionButton>
-                                            <ActionButton onClick={() => handleDelete(blog._id)} variant="danger">Delete</ActionButton>
+                                            <ActionButton onClick={() => handleDelete(blog._id)} variant="danger">Del</ActionButton>
                                         </div>
                                     </td>
                                 </tr>
@@ -222,6 +225,7 @@ const Blogs = () => {
                         </tbody>
                     </table>
                 )}
+                </div>
             </div>
         </div>
     );
