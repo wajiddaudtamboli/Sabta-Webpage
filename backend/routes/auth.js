@@ -97,4 +97,96 @@ router.get('/me', authMiddleware, async (req, res) => {
     }
 });
 
+// Forgot Password - Send reset token
+router.post('/forgot-password', async (req, res) => {
+    const { email } = req.body;
+    try {
+        if (!email) {
+            return res.status(400).json({ message: 'Email is required' });
+        }
+
+        const user = await AdminUser.findOne({ email });
+        if (!user) {
+            // Don't reveal if user exists or not for security
+            return res.json({ message: 'If this email exists, a reset link has been sent.' });
+        }
+
+        // Generate reset token (valid for 1 hour)
+        const resetToken = jwt.sign(
+            { id: user._id, purpose: 'password-reset' }, 
+            process.env.JWT_SECRET, 
+            { expiresIn: '1h' }
+        );
+
+        // Store reset token in user document
+        user.resetToken = resetToken;
+        user.resetTokenExpiry = Date.now() + 3600000; // 1 hour
+        await user.save();
+
+        // In production, send email here. For now, return token for testing
+        console.log('Password reset token generated for:', email);
+        
+        res.json({ 
+            message: 'If this email exists, a reset link has been sent.',
+            // For development/testing only - remove in production
+            resetToken: resetToken 
+        });
+    } catch (err) {
+        console.error('Forgot password error:', err);
+        res.status(500).json({ message: 'Server error', error: err.message });
+    }
+});
+
+// Reset Password with token
+router.post('/reset-password', async (req, res) => {
+    const { token, newPassword } = req.body;
+    try {
+        if (!token || !newPassword) {
+            return res.status(400).json({ message: 'Token and new password are required' });
+        }
+
+        if (newPassword.length < 6) {
+            return res.status(400).json({ message: 'Password must be at least 6 characters' });
+        }
+
+        // Verify token
+        let decoded;
+        try {
+            decoded = jwt.verify(token, process.env.JWT_SECRET);
+        } catch (err) {
+            return res.status(400).json({ message: 'Invalid or expired reset token' });
+        }
+
+        if (decoded.purpose !== 'password-reset') {
+            return res.status(400).json({ message: 'Invalid token type' });
+        }
+
+        const user = await AdminUser.findById(decoded.id);
+        if (!user) {
+            return res.status(400).json({ message: 'User not found' });
+        }
+
+        // Check if token matches and not expired
+        if (user.resetToken !== token || user.resetTokenExpiry < Date.now()) {
+            return res.status(400).json({ message: 'Reset token has expired' });
+        }
+
+        // Hash new password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+        // Update password and clear reset token
+        user.password = hashedPassword;
+        user.resetToken = undefined;
+        user.resetTokenExpiry = undefined;
+        await user.save();
+
+        console.log('Password reset successful for user:', user.email);
+        res.json({ message: 'Password reset successful. You can now login.' });
+    } catch (err) {
+        console.error('Reset password error:', err);
+        res.status(500).json({ message: 'Server error', error: err.message });
+    }
+});
+
 module.exports = router;

@@ -10,6 +10,17 @@ const Login = () => {
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
+    // Forgot Password States
+    const [showForgotModal, setShowForgotModal] = useState(false);
+    const [forgotEmail, setForgotEmail] = useState('');
+    const [forgotLoading, setForgotLoading] = useState(false);
+    const [forgotMessage, setForgotMessage] = useState('');
+    const [forgotError, setForgotError] = useState('');
+    const [resetToken, setResetToken] = useState('');
+    const [showResetForm, setShowResetForm] = useState(false);
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -26,6 +37,76 @@ const Login = () => {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleForgotPassword = async (e) => {
+        e.preventDefault();
+        setForgotLoading(true);
+        setForgotError('');
+        setForgotMessage('');
+        
+        try {
+            const res = await api.post('/auth/forgot-password', { email: forgotEmail });
+            setForgotMessage(res.data.message);
+            if (res.data.resetToken) {
+                setResetToken(res.data.resetToken);
+                setShowResetForm(true);
+            }
+        } catch (err) {
+            setForgotError(err.response?.data?.message || 'Failed to process request');
+        } finally {
+            setForgotLoading(false);
+        }
+    };
+
+    const handleResetPassword = async (e) => {
+        e.preventDefault();
+        
+        if (newPassword !== confirmPassword) {
+            setForgotError('Passwords do not match');
+            return;
+        }
+        
+        if (newPassword.length < 6) {
+            setForgotError('Password must be at least 6 characters');
+            return;
+        }
+        
+        setForgotLoading(true);
+        setForgotError('');
+        
+        try {
+            const res = await api.post('/auth/reset-password', { 
+                token: resetToken, 
+                newPassword 
+            });
+            setForgotMessage(res.data.message);
+            setShowResetForm(false);
+            setResetToken('');
+            // Close modal after 2 seconds
+            setTimeout(() => {
+                setShowForgotModal(false);
+                setForgotMessage('');
+                setForgotEmail('');
+                setNewPassword('');
+                setConfirmPassword('');
+            }, 2000);
+        } catch (err) {
+            setForgotError(err.response?.data?.message || 'Failed to reset password');
+        } finally {
+            setForgotLoading(false);
+        }
+    };
+
+    const closeForgotModal = () => {
+        setShowForgotModal(false);
+        setForgotEmail('');
+        setForgotError('');
+        setForgotMessage('');
+        setShowResetForm(false);
+        setResetToken('');
+        setNewPassword('');
+        setConfirmPassword('');
     };
 
     return (
@@ -104,9 +185,14 @@ const Login = () => {
                                 />
                                 Remember Me
                             </label>
-                            <a href="#" style={{color: '#ffffff'}} className="hover:text-[#d4a853] transition-colors">
+                            <button 
+                                type="button"
+                                onClick={() => setShowForgotModal(true)}
+                                style={{color: '#ffffff'}} 
+                                className="hover:text-[#d4a853] transition-colors cursor-pointer bg-transparent border-none"
+                            >
                                 Forgot Your Password?
-                            </a>
+                            </button>
                         </div>
 
                         <button
@@ -119,6 +205,98 @@ const Login = () => {
                     </form>
                 </div>
             </div>
+
+            {/* Forgot Password Modal */}
+            {showForgotModal && (
+                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+                    <div className="bg-[#2a2a2a] rounded-xl p-6 w-full max-w-md relative border border-gray-700">
+                        <button 
+                            onClick={closeForgotModal}
+                            className="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl cursor-pointer bg-transparent border-none"
+                        >
+                            ✕
+                        </button>
+                        
+                        <h2 style={{color: '#ffffff'}} className="text-xl font-semibold mb-4">
+                            {showResetForm ? 'Reset Password' : 'Forgot Password'}
+                        </h2>
+                        
+                        {forgotMessage && (
+                            <div className="bg-green-500/20 border border-green-500 text-green-400 px-4 py-2 rounded mb-4">
+                                {forgotMessage}
+                            </div>
+                        )}
+                        
+                        {forgotError && (
+                            <div className="bg-red-500/20 border border-red-500 text-red-400 px-4 py-2 rounded mb-4">
+                                {forgotError}
+                            </div>
+                        )}
+                        
+                        {!showResetForm ? (
+                            <form onSubmit={handleForgotPassword}>
+                                <p style={{color: '#cccccc'}} className="text-sm mb-4">
+                                    Enter your admin email address and we'll help you reset your password.
+                                </p>
+                                <input
+                                    type="email"
+                                    placeholder="Enter your email"
+                                    className="w-full p-3 bg-white text-gray-800 rounded border-none outline-none mb-4"
+                                    value={forgotEmail}
+                                    onChange={(e) => setForgotEmail(e.target.value)}
+                                    required
+                                />
+                                <button
+                                    type="submit"
+                                    disabled={forgotLoading}
+                                    className="w-full py-3 bg-[#d4a853] text-black font-bold rounded hover:bg-[#c49743] transition-colors disabled:opacity-50 cursor-pointer"
+                                >
+                                    {forgotLoading ? 'Processing...' : 'Send Reset Link'}
+                                </button>
+                            </form>
+                        ) : (
+                            <form onSubmit={handleResetPassword}>
+                                <p style={{color: '#cccccc'}} className="text-sm mb-4">
+                                    Enter your new password below.
+                                </p>
+                                <input
+                                    type="password"
+                                    placeholder="New Password"
+                                    className="w-full p-3 bg-white text-gray-800 rounded border-none outline-none mb-3"
+                                    value={newPassword}
+                                    onChange={(e) => setNewPassword(e.target.value)}
+                                    required
+                                    minLength={6}
+                                />
+                                <input
+                                    type="password"
+                                    placeholder="Confirm New Password"
+                                    className="w-full p-3 bg-white text-gray-800 rounded border-none outline-none mb-4"
+                                    value={confirmPassword}
+                                    onChange={(e) => setConfirmPassword(e.target.value)}
+                                    required
+                                    minLength={6}
+                                />
+                                <button
+                                    type="submit"
+                                    disabled={forgotLoading}
+                                    className="w-full py-3 bg-[#d4a853] text-black font-bold rounded hover:bg-[#c49743] transition-colors disabled:opacity-50 cursor-pointer"
+                                >
+                                    {forgotLoading ? 'Resetting...' : 'Reset Password'}
+                                </button>
+                            </form>
+                        )}
+                        
+                        <button
+                            type="button"
+                            onClick={closeForgotModal}
+                            className="w-full mt-3 py-2 text-gray-400 hover:text-white transition-colors cursor-pointer bg-transparent border-none"
+                        >
+                            Back to Login
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
