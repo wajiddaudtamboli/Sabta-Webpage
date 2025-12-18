@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 
 // Professional SVG Icons
@@ -62,6 +62,7 @@ const LogoutIcon = () => (
 const AdminLayout = () => {
     const navigate = useNavigate();
     const location = useLocation();
+    const [sidebarOpen, setSidebarOpen] = useState(false);
 
     const handleLogout = () => {
         localStorage.removeItem('adminToken');
@@ -69,6 +70,8 @@ const AdminLayout = () => {
     };
 
     const isActive = (path) => location.pathname === path;
+
+    const closeSidebar = () => setSidebarOpen(false);
 
     const navItems = [
         { path: '/admin/dashboard', label: 'Dashboard', icon: <DashboardIcon /> },
@@ -80,9 +83,31 @@ const AdminLayout = () => {
     ];
 
     return (
-        <div className="admin-panel flex min-h-screen bg-[#1a1a1a]">
+        <div className="admin-panel flex min-h-screen bg-[#1a1a1a] relative">
+            {/* Mobile overlay */}
+            {sidebarOpen && (
+                <div 
+                    className="admin-overlay show md:hidden" 
+                    onClick={closeSidebar}
+                />
+            )}
+            
+            {/* Mobile header */}
+            <div className="md:hidden bg-[#2a2a2a] text-white p-4 flex justify-between items-center">
+                <span className="text-lg font-bold">
+                    <span className="text-[#d4a853]">SABTA</span>
+                    <span className="text-white"> GRANITE</span>
+                </span>
+                <button 
+                    onClick={() => setSidebarOpen(true)}
+                    className="text-white text-2xl"
+                >
+                    ☰
+                </button>
+            </div>
+
             {/* Sidebar */}
-            <div className="w-64 bg-[#2a2a2a] text-white flex-shrink-0 flex flex-col">
+            <div className={`admin-sidebar w-64 bg-[#2a2a2a] text-white flex-shrink-0 flex flex-col md:relative md:translate-x-0 ${sidebarOpen ? 'open' : ''}`}>
                 {/* Logo */}
                 <div className="p-4 border-b border-gray-700">
                     <div className="text-center">
@@ -100,6 +125,7 @@ const AdminLayout = () => {
                         <Link
                             key={item.path}
                             to={item.path}
+                            onClick={closeSidebar}
                             className={`flex items-center gap-3 px-4 py-3 transition-colors ${
                                 isActive(item.path)
                                     ? 'bg-[#d4a853] text-black'
@@ -125,8 +151,8 @@ const AdminLayout = () => {
             </div>
 
             {/* Main Content */}
-            <div className="flex-1 overflow-auto">
-                <div className="p-8">
+            <div className="admin-content flex-1 overflow-auto md:ml-0">
+                <div className="p-4 md:p-8">
                     <Outlet />
                 </div>
             </div>

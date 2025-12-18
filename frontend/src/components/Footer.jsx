@@ -13,7 +13,7 @@ const Footer = () => {
   return (
     <div>
       {/* FOOTER */}
-      <footer className="w-full px-6 md:px-12 lg:px-20 pt-20 pb-6">
+      <footer className="w-full max-w-full px-4 md:px-12 lg:px-20 pt-20 pb-6 overflow-x-hidden">
         {/* ---------- MAIN FOOTER GRID + FLEX ---------- */}
         <div
           className="

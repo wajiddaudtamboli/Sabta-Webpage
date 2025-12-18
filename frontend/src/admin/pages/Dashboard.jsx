@@ -50,26 +50,26 @@ const Dashboard = () => {
     const StatCard = ({ title, value, icon, onClick, highlight = false }) => (
         <div 
             onClick={onClick}
-            className={`bg-[#2a2a2a] p-6 rounded border border-gray-700 cursor-pointer hover:border-[#d4a853] transition-colors ${highlight ? 'ring-2 ring-[#d4a853]' : ''}`}
+            className={`bg-[#2a2a2a] p-4 md:p-6 rounded border border-gray-700 cursor-pointer hover:border-[#d4a853] transition-colors ${highlight ? 'ring-2 ring-[#d4a853]' : ''}`}
         >
             <div className="flex items-center justify-between">
-                <div>
-                    <h2 className="text-sm font-medium text-gray-400 uppercase tracking-wider">{title}</h2>
-                    <p className="text-4xl font-bold text-[#d4a853] mt-2">{loading ? '...' : value}</p>
+                <div className="flex-1">
+                    <h2 className="text-xs md:text-sm font-medium text-gray-400 uppercase tracking-wider">{title}</h2>
+                    <p className="text-2xl md:text-4xl font-bold text-[#d4a853] mt-1 md:mt-2">{loading ? '...' : value}</p>
                 </div>
-                <div className="text-gray-600">{icon}</div>
+                <div className="text-gray-600 ml-2">{icon}</div>
             </div>
         </div>
     );
 
     return (
         <div className="text-white">
-            <h1 className="text-3xl font-bold mb-8">
+            <h1 className="text-xl md:text-3xl font-bold mb-4 md:mb-8">
                 <span className="text-[#d4a853]">SABTA GRANITE</span> Dashboard
             </h1>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
                 <StatCard 
                     title="Total Products" 
                     value={stats.products}
@@ -134,7 +134,7 @@ const Dashboard = () => {
             {/* Recent Enquiries */}
             <div className="bg-[#2a2a2a] rounded border border-gray-700 overflow-hidden">
                 <div className="p-4 border-b border-gray-700 flex justify-between items-center">
-                    <h2 className="text-lg font-semibold text-[#d4a853]">Recent Enquiries</h2>
+                    <h2 className="text-base md:text-lg font-semibold text-[#d4a853]">Recent Enquiries</h2>
                     <button 
                         onClick={() => navigate('/admin/enquiries')}
                         className="text-sm text-gray-400 hover:text-white cursor-pointer"
@@ -143,40 +143,42 @@ const Dashboard = () => {
                     </button>
                 </div>
                 {loading ? (
-                    <div className="p-8 text-center text-gray-400">Loading...</div>
+                    <div className="p-4 md:p-8 text-center text-gray-400">Loading...</div>
                 ) : recentEnquiries.length === 0 ? (
-                    <div className="p-8 text-center text-gray-400">No enquiries yet</div>
+                    <div className="p-4 md:p-8 text-center text-gray-400">No enquiries yet</div>
                 ) : (
-                    <table className="w-full">
-                        <thead className="bg-[#1a1a1a]">
-                            <tr>
-                                <th className="p-3 text-left text-sm text-gray-400">Name</th>
-                                <th className="p-3 text-left text-sm text-gray-400">Email</th>
-                                <th className="p-3 text-left text-sm text-gray-400">Status</th>
-                                <th className="p-3 text-left text-sm text-gray-400">Date</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {recentEnquiries.map(enquiry => (
-                                <tr key={enquiry._id} className="border-t border-gray-700 hover:bg-[#3a3a3a]">
-                                    <td className="p-3">{enquiry.name}</td>
-                                    <td className="p-3 text-gray-400">{enquiry.email}</td>
-                                    <td className="p-3">
-                                        <span className={`px-2 py-1 rounded text-xs ${
-                                            enquiry.status === 'new' ? 'bg-blue-900 text-blue-300' :
-                                            enquiry.status === 'read' ? 'bg-yellow-900 text-yellow-300' :
-                                            'bg-green-900 text-green-300'
-                                        }`}>
-                                            {enquiry.status}
-                                        </span>
-                                    </td>
-                                    <td className="p-3 text-gray-400 text-sm">
-                                        {new Date(enquiry.createdAt).toLocaleDateString()}
-                                    </td>
+                    <div className="overflow-x-auto">
+                        <table className="w-full min-w-full">
+                            <thead className="bg-[#1a1a1a]">
+                                <tr>
+                                    <th className="p-2 md:p-3 text-left text-xs md:text-sm text-gray-400">Name</th>
+                                    <th className="p-2 md:p-3 text-left text-xs md:text-sm text-gray-400 hidden sm:table-cell">Email</th>
+                                    <th className="p-2 md:p-3 text-left text-xs md:text-sm text-gray-400">Status</th>
+                                    <th className="p-2 md:p-3 text-left text-xs md:text-sm text-gray-400 hidden md:table-cell">Date</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {recentEnquiries.map(enquiry => (
+                                    <tr key={enquiry._id} className="border-t border-gray-700 hover:bg-[#3a3a3a]">
+                                        <td className="p-2 md:p-3 text-sm md:text-base">{enquiry.name}</td>
+                                        <td className="p-2 md:p-3 text-gray-400 text-sm hidden sm:table-cell">{enquiry.email}</td>
+                                        <td className="p-2 md:p-3">
+                                            <span className={`px-2 py-1 rounded text-xs ${
+                                                enquiry.status === 'new' ? 'bg-blue-900 text-blue-300' :
+                                                enquiry.status === 'read' ? 'bg-yellow-900 text-yellow-300' :
+                                                'bg-green-900 text-green-300'
+                                            }`}>
+                                                {enquiry.status}
+                                            </span>
+                                        </td>
+                                        <td className="p-2 md:p-3 text-gray-400 text-xs md:text-sm hidden md:table-cell">
+                                            {new Date(enquiry.createdAt).toLocaleDateString()}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 )}
             </div>
         </div>

@@ -17,11 +17,11 @@ const Navbar = () => {
     <>
       {/* TOP NAVBAR */}
       <nav
-        className={`fixed top-0 left-0 w-full z-50 transition-all duration-300
+        className={`fixed top-0 left-0 w-full max-w-full z-50 transition-all duration-300
         ${isScrolled ? "bg-black/90 backdrop-blur-md" : "bg-transparent"}
       `}
       >
-        <div className="flex items-center justify-between px-4 sm:px-6">
+        <div className="flex items-center justify-between px-4 sm:px-6 w-full max-w-full">
           {/* Logo */}
           <div className=" text-2xl font-bold">
             <img src={Logo} alt="logo" className="h-30 my-[-10px]" />
@@ -73,10 +73,10 @@ const Navbar = () => {
       <div
         className={`
           fixed top-0 right-0 h-full w-3/4 max-w-xs
-          bg-black/60 backdrop-blur-md
+          bg-black/80 backdrop-blur-md
           text-white pt-6 pb-10 px-6
           transform transition-transform duration-300
-          md:hidden z-50
+          md:hidden z-50 overflow-y-auto
           ${menuOpen ? "translate-x-0" : "translate-x-full"}
         `}
       >

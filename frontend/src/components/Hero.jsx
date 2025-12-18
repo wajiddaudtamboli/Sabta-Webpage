@@ -71,7 +71,7 @@ const Hero = () => {
     : defaultSlides;
 
   return (
-    <div className="w-full h-screen relative overflow-hidden">
+    <div className="w-full max-w-full h-screen relative overflow-hidden">
       <Swiper
         modules={[Navigation, Pagination, A11y, Autoplay, EffectFade]}
         slidesPerView={1}
@@ -89,7 +89,7 @@ const Hero = () => {
         {slides.map((slide, i) => (
           <SwiperSlide key={i}>
             <div
-              className="w-full h-screen bg-cover bg-center flex items-center justify-center md:justify-start relative"
+              className="w-full max-w-full h-screen bg-cover bg-center flex items-center justify-center md:justify-start relative"
               style={{ backgroundImage: `url(${slide.img})` }}
             >
               {/* Dark Overlay */}
@@ -98,14 +98,14 @@ const Hero = () => {
               {/* Text Block */}
               <div
                 key={activeIndex}
-                className="relative px-4 sm:px-6 md:pl-16 max-w-xl animate-fade-slide text-center md:text-left"
+                className="relative px-4 sm:px-6 md:pl-16 max-w-full md:max-w-xl animate-fade-slide text-center md:text-left"
               >
                 <div className="mt-3 text-base sm:text-lg drop-shadow-xl flex items-center gap-3 justify-center md:justify-start mb-5">
                   <div className="h-px w-10 bg-(--brand-accent)"></div>
                   <span className="uppercase">welcome to sabta granite</span>
                 </div>
 
-                <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold drop-shadow-xl leading-tight">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold drop-shadow-xl leading-tight">
                   {slide.heading}
                 </h1>
               </div>

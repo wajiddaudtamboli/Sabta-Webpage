@@ -274,7 +274,7 @@ const Products = () => {
     );
 
     return (
-        <div className="p-6 text-white min-h-screen">
+        <div className="p-2 md:p-6 text-white min-h-screen w-full max-w-full overflow-x-hidden">
             {/* Hidden file input for image upload */}
             <input
                 type="file"
