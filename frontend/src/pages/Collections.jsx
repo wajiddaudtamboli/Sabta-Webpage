@@ -150,7 +150,7 @@ const Collections = () => {
                 />
 
                 {/* Black gradient overlay */}
-                <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/30 to-transparent"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
 
                 {/* Category Name */}
                 <div className="absolute bottom-6 left-6 right-6">
@@ -168,7 +168,7 @@ const Collections = () => {
       </section>
 
       {/* ✅ CTA SECTION */}
-      <section className="bg-linear-to-r from-amber-600 to-amber-800 py-16 px-6 sm:px-10 md:px-16 lg:px-24">
+      <section className="bg-gradient-to-r from-amber-600 to-amber-800 py-16 px-6 sm:px-10 md:px-16 lg:px-24">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
             Can't Find What You're Looking For?

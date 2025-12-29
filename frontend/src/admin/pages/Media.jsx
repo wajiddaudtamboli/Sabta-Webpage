@@ -191,7 +191,7 @@ const Media = () => {
                                 <img 
                                     src={media.url} 
                                     alt="Preview" 
-                                    className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded shrink-0 cursor-pointer"
+                                    className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded flex-shrink-0 cursor-pointer"
                                     onClick={() => setSelectedMedia(media)}
                                     onError={(e) => { e.target.src = 'https://placehold.co/80x80?text=Error'; }}
                                 />
@@ -297,11 +297,11 @@ const Media = () => {
                                     </div>
 
                                     {/* Frame Preview */}
-                                    <div className="bg-linear-to-br from-gray-800 to-gray-900 rounded-lg p-4 flex justify-center">
+                                    <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg p-4 flex justify-center">
                                         {deviceFrame === 'mobile' && (
                                             <div className="bg-gray-900 rounded-[20px] p-2 shadow-xl">
                                                 <div className="w-3 h-3 bg-black rounded-full mx-auto mb-1"></div>
-                                                <div className="bg-white rounded-2xl overflow-hidden" style={{width: '120px', height: '213px'}}>
+                                                <div className="bg-white rounded-[16px] overflow-hidden" style={{width: '120px', height: '213px'}}>
                                                     <img src={selectedMedia.url} alt="Mobile" className="w-full h-full object-contain"/>
                                                 </div>
                                                 <div className="w-8 h-1 bg-gray-700 rounded-full mx-auto mt-1"></div>

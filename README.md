@@ -97,6 +97,9 @@ In Vercel Project Settings → Environment Variables, add:
 |----------|-------|
 | `MONGODB_URI` | `mongodb+srv://username:password@cluster.mongodb.net/sabta-granite` |
 | `JWT_SECRET` | `your_super_secret_jwt_key_32_chars_minimum` |
+| `CLOUDINARY_CLOUD_NAME` | `your_cloudinary_cloud_name` |
+| `CLOUDINARY_API_KEY` | `your_cloudinary_api_key` |
+| `CLOUDINARY_API_SECRET` | `your_cloudinary_api_secret` |
 
 ### Step 3: Deploy
 - Click "Deploy"

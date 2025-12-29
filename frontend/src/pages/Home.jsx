@@ -190,7 +190,7 @@ const Home = () => {
           absolute inset-0
           transition-transform duration-700 ease-out
           group-hover:scale-110
-          group-hover:-translate-z-10
+          group-hover:translate-z-[-40px]
           transform-gpu
         "
                   >
@@ -202,7 +202,7 @@ const Home = () => {
                   </div>
 
                   {/* OVERLAY */}
-                  <div className="absolute inset-0 bg-linear-to-b from-black/60 to-transparent"></div>
+                  <div className="absolute inset-0 bg-gradient-to-b from-black/60 to-transparent"></div>
 
                   {/* TEXT LAYER (moves more for parallax) */}
                   <div
