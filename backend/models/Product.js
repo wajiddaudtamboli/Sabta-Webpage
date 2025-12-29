@@ -1,4 +1,4 @@
-const { mongoose } = require('../db');
+const mongoose = require('mongoose');
 
 // Sub-schema for product images with metadata
 const ProductImageSchema = new mongoose.Schema({

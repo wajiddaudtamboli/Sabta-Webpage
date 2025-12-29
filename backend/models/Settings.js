@@ -1,4 +1,4 @@
-const { mongoose } = require('../db');
+const mongoose = require('mongoose');
 
 const SettingsSchema = new mongoose.Schema({
     key: { type: String, required: true, unique: true },

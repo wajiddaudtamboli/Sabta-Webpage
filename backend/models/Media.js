@@ -1,4 +1,4 @@
-const { mongoose } = require('../db');
+const mongoose = require('mongoose');
 
 const MediaSchema = new mongoose.Schema({
     url: { type: String, required: true },
