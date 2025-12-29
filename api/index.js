@@ -39,13 +39,68 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Ensure DB connection before each request
-app.use(async (req, res, next) => {
+// Health check endpoint (no DB required)
+app.get('/api/health', (req, res) => {
+    res.json({
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        env: {
+            MONGODB_URI: process.env.MONGODB_URI ? 'SET' : 'NOT SET',
+            JWT_SECRET: process.env.JWT_SECRET ? 'SET' : 'NOT SET',
+            NODE_ENV: process.env.NODE_ENV || 'not set'
+        }
+    });
+});
+
+// Debug endpoint (no DB required)
+app.get('/api/debug', (req, res) => {
+    res.json({
+        mongoUri: process.env.MONGODB_URI ? 'SET (value hidden)' : 'NOT SET - Please add MONGODB_URI in Vercel Environment Variables',
+        jwtSecret: process.env.JWT_SECRET ? 'SET' : 'NOT SET - Please add JWT_SECRET in Vercel Environment Variables',
+        nodeEnv: process.env.NODE_ENV,
+        dbState: mongoose.connection.readyState,
+        dbStateName: ['disconnected', 'connected', 'connecting', 'disconnecting'][mongoose.connection.readyState] || 'unknown',
+        message: !process.env.MONGODB_URI 
+            ? 'MONGODB_URI is not set! Go to Vercel Dashboard > Project Settings > Environment Variables and add MONGODB_URI'
+            : 'Environment variables are configured'
+    });
+});
+
+// Root endpoint (no DB required)
+app.get('/', (req, res) => {
+    res.json({ 
+        message: 'Sabta Webpage API is running', 
+        status: 'ok',
+        envCheck: {
+            mongodb: process.env.MONGODB_URI ? 'configured' : 'MISSING',
+            jwt: process.env.JWT_SECRET ? 'configured' : 'MISSING'
+        }
+    });
+});
+
+app.get('/api', (req, res) => {
+    res.json({ 
+        message: 'Sabta Webpage API is running', 
+        status: 'ok',
+        dbState: mongoose.connection.readyState,
+        envCheck: {
+            mongodb: process.env.MONGODB_URI ? 'configured' : 'MISSING - Add in Vercel Dashboard',
+            jwt: process.env.JWT_SECRET ? 'configured' : 'MISSING - Add in Vercel Dashboard'
+        }
+    });
+});
+
+// Database connection middleware - only for routes that need it
+const requireDB = async (req, res, next) => {
     try {
+        if (!process.env.MONGODB_URI) {
+            return res.status(500).json({ 
+                message: 'Database not configured', 
+                error: 'MONGODB_URI environment variable is not set. Please add it in Vercel Dashboard > Project Settings > Environment Variables'
+            });
+        }
         await connectToDatabase();
-        // Double-check connection state
         if (mongoose.connection.readyState !== 1) {
-            console.log('Connection state after connect:', mongoose.connection.readyState);
             throw new Error('Connection not ready after connect');
         }
         next();
@@ -53,51 +108,29 @@ app.use(async (req, res, next) => {
         console.error('Database connection error:', error.message);
         res.status(500).json({ 
             message: 'Database connection failed', 
-            error: error.message
+            error: error.message,
+            hint: 'Check MongoDB Atlas: 1) IP whitelist (add 0.0.0.0/0), 2) Username/password, 3) Database name'
         });
     }
-});
+};
 
-// Routes
+// Routes - all require database connection
 const routesPath = path.join(__dirname, '..', 'backend', 'routes');
 
 try {
-    app.use('/api/auth', require(path.join(routesPath, 'auth')));
-    app.use('/api/pages', require(path.join(routesPath, 'pages')));
-    app.use('/api/products', require(path.join(routesPath, 'products')));
-    app.use('/api/collections', require(path.join(routesPath, 'collections')));
-    app.use('/api/blogs', require(path.join(routesPath, 'blogs')));
-    app.use('/api/enquiries', require(path.join(routesPath, 'enquiries')));
-    app.use('/api/media', require(path.join(routesPath, 'media')));
-    app.use('/api/projects', require(path.join(routesPath, 'projects')));
-    app.use('/api', require(path.join(routesPath, 'settings')));
+    app.use('/api/auth', requireDB, require(path.join(routesPath, 'auth')));
+    app.use('/api/pages', requireDB, require(path.join(routesPath, 'pages')));
+    app.use('/api/products', requireDB, require(path.join(routesPath, 'products')));
+    app.use('/api/collections', requireDB, require(path.join(routesPath, 'collections')));
+    app.use('/api/blogs', requireDB, require(path.join(routesPath, 'blogs')));
+    app.use('/api/enquiries', requireDB, require(path.join(routesPath, 'enquiries')));
+    app.use('/api/media', requireDB, require(path.join(routesPath, 'media')));
+    app.use('/api/projects', requireDB, require(path.join(routesPath, 'projects')));
+    app.use('/api', requireDB, require(path.join(routesPath, 'settings')));
     console.log('All routes loaded successfully');
 } catch (routeError) {
     console.error('Error loading routes:', routeError.message);
 }
-
-app.get('/api', (req, res) => {
-    res.json({ 
-        message: 'Sabta Webpage API is running', 
-        status: 'ok',
-        dbState: mongoose.connection.readyState,
-        dbName: mongoose.connection.name || 'not connected'
-    });
-});
-
-app.get('/api/debug', async (req, res) => {
-    res.json({
-        mongoUri: process.env.MONGODB_URI ? 'SET (hidden)' : 'NOT SET',
-        jwtSecret: process.env.JWT_SECRET ? 'SET' : 'NOT SET',
-        dbState: mongoose.connection.readyState,
-        dbName: mongoose.connection.name,
-        dbHost: mongoose.connection.host
-    });
-});
-
-app.get('/', (req, res) => {
-    res.json({ message: 'Sabta Webpage API is running', status: 'ok' });
-});
 
 // Error handling
 app.use((err, req, res, next) => {
