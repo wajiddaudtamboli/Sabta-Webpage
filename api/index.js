@@ -66,6 +66,37 @@ app.get('/api/debug', (req, res) => {
     });
 });
 
+// Test database connection endpoint
+app.get('/api/test-db', async (req, res) => {
+    try {
+        if (!process.env.MONGODB_URI) {
+            return res.json({ 
+                success: false, 
+                error: 'MONGODB_URI not set',
+                uri: 'NOT SET'
+            });
+        }
+        
+        // Try to connect
+        await connectToDatabase();
+        
+        res.json({ 
+            success: true, 
+            message: 'Database connected successfully',
+            dbState: mongoose.connection.readyState,
+            dbName: mongoose.connection.name,
+            dbHost: mongoose.connection.host
+        });
+    } catch (error) {
+        res.json({ 
+            success: false, 
+            error: error.message,
+            dbState: mongoose.connection.readyState,
+            hint: 'Check: 1) MongoDB URI format, 2) IP whitelist in Atlas (add 0.0.0.0/0), 3) Username/password'
+        });
+    }
+});
+
 // Root endpoint (no DB required)
 app.get('/', (req, res) => {
     res.json({ 
