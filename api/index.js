@@ -69,6 +69,8 @@ try {
     app.use('/api/blogs', require(path.join(routesPath, 'blogs')));
     app.use('/api/enquiries', require(path.join(routesPath, 'enquiries')));
     app.use('/api/media', require(path.join(routesPath, 'media')));
+    app.use('/api/projects', require(path.join(routesPath, 'projects')));
+    app.use('/api', require(path.join(routesPath, 'settings')));
     console.log('All routes loaded successfully');
 } catch (routeError) {
     console.error('Error loading routes:', routeError.message);

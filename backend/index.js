@@ -29,6 +29,8 @@ const startServer = async () => {
         app.use('/api/blogs', require('./routes/blogs'));
         app.use('/api/enquiries', require('./routes/enquiries'));
         app.use('/api/media', require('./routes/media'));
+        app.use('/api/projects', require('./routes/projects'));
+        app.use('/api', require('./routes/settings'));
 
         app.get('/', (req, res) => {
             res.send('Sabta Webpage API is running');

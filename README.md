@@ -196,7 +196,3 @@ Access: `https://your-domain.vercel.app/admin/login`
 - Verify JWT_SECRET is set
 - Check token expiration
 - Clear localStorage and retry login
-
-## 📄 License
-
-MIT License - feel free to use for personal or commercial projects.

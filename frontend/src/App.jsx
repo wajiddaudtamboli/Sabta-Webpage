@@ -23,11 +23,17 @@ import Login from "./admin/pages/Login";
 import AdminLayout from "./admin/AdminLayout";
 import Dashboard from "./admin/pages/Dashboard";
 import Products from "./admin/pages/Products";
+import AdminProjects from "./admin/pages/Projects";
 import Blogs from "./admin/pages/Blogs";
 import Pages from "./admin/pages/Pages";
 import Enquiries from "./admin/pages/Enquiries";
 import Media from "./admin/pages/Media";
+import Settings from "./admin/pages/Settings";
 import ProtectedRoute from "./admin/components/ProtectedRoute";
+
+// Public Project Pages
+import Projects from "./pages/Projects";
+import ProjectDetail from "./pages/ProjectDetail";
 
 function App() {
 
@@ -48,10 +54,12 @@ function App() {
           <Route element={<AdminLayout />}>
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="products" element={<Products />} />
+            <Route path="projects" element={<AdminProjects />} />
             <Route path="blogs" element={<Blogs />} />
             <Route path="pages" element={<Pages />} />
             <Route path="enquiries" element={<Enquiries />} />
             <Route path="media" element={<Media />} />
+            <Route path="settings" element={<Settings />} />
           </Route>
         </Route>
 
@@ -59,9 +67,12 @@ function App() {
         <Route element={<PublicLayout />}>
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
+          <Route path="/projects" element={<Projects />} />
+          <Route path="/projects/:slug" element={<ProjectDetail />} />
           <Route path="/collections" element={<Collections />} />
           <Route path="/collections/:collectionName" element={<CollectionDetail />} />
           <Route path="/collections/:collectionName/:productId" element={<ProductDetail />} />
+          <Route path="/product/:id" element={<ProductDetail />} />
           <Route path="/blog" element={<Blog />} />
           <Route path="/blog/:id" element={<BlogDetails />} />
           <Route path="/catalog" element={<CatalogPage />} />

@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Collection = require('../models/Collection');
+const Product = require('../models/Product');
 const authMiddleware = require('../middleware/authMiddleware');
 
 // Default collections to seed if none exist
@@ -19,6 +20,32 @@ const defaultCollections = [
     { name: 'Terrazzo Series', displayOrder: 12 }
 ];
 
+// Helper function to get product counts for collections
+const getCollectionsWithProductCounts = async (collections) => {
+    const collectionsWithCounts = await Promise.all(
+        collections.map(async (collection) => {
+            // Extract search term from collection name (remove "Series", "Collections", etc.)
+            const searchTerm = collection.name
+                .replace(' Series', '')
+                .replace(' Collections', '')
+                .replace(' Collection', '');
+            
+            const productCount = await Product.countDocuments({
+                $or: [
+                    { collectionId: collection._id },
+                    { collectionName: { $regex: new RegExp(collection.name, 'i') } },
+                    { category: { $regex: new RegExp(searchTerm, 'i') } }
+                ]
+            });
+            return {
+                ...collection.toObject(),
+                productCount
+            };
+        })
+    );
+    return collectionsWithCounts;
+};
+
 // Get all collections (public)
 router.get('/', async (req, res) => {
     try {
@@ -30,7 +57,9 @@ router.get('/', async (req, res) => {
             collections = await Collection.find({ status: 'active' }).sort({ displayOrder: 1 });
         }
         
-        res.json(collections);
+        // Add product counts
+        const collectionsWithCounts = await getCollectionsWithProductCounts(collections);
+        res.json(collectionsWithCounts);
     } catch (err) {
         console.error('Error fetching collections:', err);
         res.status(500).json({ message: 'Server error' });
@@ -48,7 +77,9 @@ router.get('/admin', authMiddleware, async (req, res) => {
             collections = await Collection.find().sort({ displayOrder: 1 });
         }
         
-        res.json(collections);
+        // Add product counts
+        const collectionsWithCounts = await getCollectionsWithProductCounts(collections);
+        res.json(collectionsWithCounts);
     } catch (err) {
         console.error('Error fetching collections:', err);
         res.status(500).json({ message: 'Server error' });
