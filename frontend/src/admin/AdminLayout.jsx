@@ -74,6 +74,15 @@ const LogoutIcon = () => (
     </svg>
 );
 
+const CataloguesIcon = () => (
+    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+        <line x1="12" y1="6" x2="16" y2="6" />
+        <line x1="12" y1="10" x2="16" y2="10" />
+    </svg>
+);
+
 const AdminLayout = () => {
     const navigate = useNavigate();
     const location = useLocation();
@@ -92,6 +101,7 @@ const AdminLayout = () => {
         { path: '/admin/dashboard', label: 'Dashboard', icon: <DashboardIcon /> },
         { path: '/admin/products', label: 'Products', icon: <ProductsIcon /> },
         { path: '/admin/projects', label: 'Projects', icon: <ProjectsIcon /> },
+        { path: '/admin/catalogues', label: 'Catalogues', icon: <CataloguesIcon /> },
         { path: '/admin/blogs', label: 'Blogs', icon: <BlogsIcon /> },
         { path: '/admin/pages', label: 'Pages', icon: <PagesIcon /> },
         { path: '/admin/enquiries', label: 'Enquiries', icon: <EnquiriesIcon /> },

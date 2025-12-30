@@ -24,7 +24,7 @@ const Navbar = () => {
         <div className="flex items-center justify-between px-4 sm:px-6 w-full max-w-full">
           {/* Logo */}
           <div className=" text-2xl font-bold">
-            <img src={Logo} alt="logo" className="h-30 my-[-10px]" />
+            <img src={Logo} alt="logo" className="h-30 -my-2.5" />
           </div>
 
           {/* Desktop Menu */}
@@ -32,6 +32,7 @@ const Navbar = () => {
             <li><Link to="/">HOME</Link></li>
             <li><Link to="/about">ABOUT US</Link></li>
             <li><Link to="/collections">COLLECTIONS</Link></li>
+            <li><Link to="/projects">PROJECTS</Link></li>
             <li><Link to="/blog">BLOG</Link></li>
             <li><Link to="/catalog">CATALOG</Link></li>
             <li><Link to="/contact">CONTACT US</Link></li>
@@ -101,6 +102,9 @@ const Navbar = () => {
           </Link>
           <Link to="/collections" onClick={() => setMenuOpen(false)} className="block">
             COLLECTIONS
+          </Link>
+          <Link to="/projects" onClick={() => setMenuOpen(false)} className="block">
+            PROJECTS
           </Link>
           <Link to="/blog" onClick={() => setMenuOpen(false)} className="block">
             BLOG

@@ -24,6 +24,7 @@ import AdminLayout from "./admin/AdminLayout";
 import Dashboard from "./admin/pages/Dashboard";
 import Products from "./admin/pages/Products";
 import AdminProjects from "./admin/pages/Projects";
+import Catalogues from "./admin/pages/Catalogues";
 import Blogs from "./admin/pages/Blogs";
 import Pages from "./admin/pages/Pages";
 import Enquiries from "./admin/pages/Enquiries";
@@ -55,6 +56,7 @@ function App() {
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="products" element={<Products />} />
             <Route path="projects" element={<AdminProjects />} />
+            <Route path="catalogues" element={<Catalogues />} />
             <Route path="blogs" element={<Blogs />} />
             <Route path="pages" element={<Pages />} />
             <Route path="enquiries" element={<Enquiries />} />

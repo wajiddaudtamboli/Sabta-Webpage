@@ -23,7 +23,7 @@ const ProductTags = ({ product }) => {
       )}
 
       {/* COLOR */}
-      {product.color && (
+      {product.color && product.color !== "N/A" && (
         <span className="px-4 py-1.5 rounded-full border border-(--brand-accent) text-sm flex items-center gap-2">
           <span
             className="w-3 h-3 rounded-full"
@@ -33,14 +33,17 @@ const ProductTags = ({ product }) => {
         </span>
       )}
 
-      {/* COUNTRY */}
-      {product.country && (
+      {/* COUNTRY/ORIGIN */}
+      {product.country && product.country !== "Unknown" && (
         <span className="px-4 py-1.5 rounded-full border border-(--brand-accent) text-sm flex items-center gap-2">
-          <img
-            src={`https://flagcdn.com/24x18/${product.countryCode}.png`}
-            className="w-5 h-4 rounded object-cover"
-          />
-          {product.country}
+          🌍 {product.country}
+        </span>
+      )}
+
+      {/* NATURAL */}
+      {product.natural && (
+        <span className="px-4 py-1.5 rounded-full border border-(--brand-accent) text-sm bg-green-900/30">
+          Natural Stone
         </span>
       )}
 
@@ -87,30 +90,34 @@ const ProductDetail = () => {
   if (loading) return <div className="text-center py-20">Loading...</div>;
   if (!product) return <div className="text-center py-20">Product not found</div>;
 
-  // Map API data to UI structure
+  // Map API data to UI structure - now using actual database fields
   const selectedProduct = {
-    code: product._id ? product._id.substring(product._id.length - 4) : "0000", // Fake code from ID
+    code: product.code || (product._id ? product._id.substring(product._id.length - 4) : "0000"),
     name: product.name,
     description: product.description || "No description available.",
     hero: product.images && product.images.length > 0 ? product.images[0] : ProductPageImage,
+    allImages: product.images || [ProductPageImage],
     type: product.category,
-    color: "N/A", // Not in schema
+    color: product.color || "N/A",
     colorDot: "#cccccc",
-    country: "Unknown",
+    country: product.origin || "Unknown",
     countryCode: "un",
-    bookmatch: false,
-    translucent: false,
+    bookmatch: product.isBookmatch || false,
+    translucent: product.isTranslucent || false,
+    natural: product.isNatural !== false,
+    collectionName: product.collectionName || product.category || "Natural Stone",
   };
 
+  // Stone properties from database
   const stoneProperties = {
-    origin: "Brazil",
-    grade: "Premium / Export Grade",
-    compressionStrength: "153 MPa",
-    impactTest: "Not Published",
-    bulkDensity: "2,635 kg/m³",
-    waterAbsorption: "0.2–0.25%",
-    thermalExpansion: "Very Low / High Stability",
-    flexuralStrength: "11.40 MPa",
+    origin: product.origin || "Not specified",
+    grade: product.grade || "Premium / Export Grade",
+    compressionStrength: product.compressionStrength || "Not Published",
+    impactTest: product.impactTest || "Not Published",
+    bulkDensity: product.bulkDensity || "Not Published",
+    waterAbsorption: product.waterAbsorption || "Not Published",
+    thermalExpansion: product.thermalExpansion || "Not Published",
+    flexuralStrength: product.flexuralStrength || "Not Published",
   };
 
   return (

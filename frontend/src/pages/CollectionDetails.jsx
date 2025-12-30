@@ -40,12 +40,25 @@ const CollectionDetail = () => {
 
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [collectionData, setCollectionData] = useState(null);
 
   // FILTER STATES
   const [filters, setFilters] = useState({
     color: "",
     finish: "",
   });
+
+  // Fetch collection from API if not in static list
+  const loadCollection = async () => {
+    try {
+      const res = await api.get(`/collections/${collectionName}`);
+      if (res.data) {
+        setCollectionData(res.data);
+      }
+    } catch (err) {
+      console.error("Error loading collection:", err);
+    }
+  };
 
   const loadProducts = async () => {
     try {
@@ -64,6 +77,7 @@ const CollectionDetail = () => {
   };
 
   useEffect(() => {
+    loadCollection();
     loadProducts();
   }, [collectionName, filters]);
 
@@ -240,10 +254,36 @@ const CollectionDetail = () => {
     },
   };
 
-  const info = collectionContent[collectionName] || {};
-  // ❌ If invalid collection, return 404 page
-  if (!collectionContent[collectionName]) {
-    return <NotFound />;
+  // Use static content if available, otherwise use dynamic collection data
+  const info = collectionContent[collectionName] || (collectionData ? {
+    hero: collectionData.image || Marble,
+    heading: collectionData.tagline1 || "Explore Our Collection",
+    subheading: collectionData.description || "Discover our exquisite selection of natural stones, carefully curated for quality and beauty.",
+    heading1: collectionData.tagline2 || "Quality & Craftsmanship",
+    description1: collectionData.tagline3 || "Each stone is selected for its unique characteristics and superior quality.",
+    applications: "Flooring, wall cladding, countertops, feature interiors, and decorative installations",
+    care: "Clean regularly with a soft cloth or mop and mild pH-neutral cleaner. Avoid harsh acids and abrasive tools.",
+    finishes: "Polished, Honed, Matte",
+    background: collectionData.name?.toUpperCase() || title.toUpperCase(),
+  } : null);
+  
+  // Show loading or 404 only if no static content AND no dynamic data yet
+  if (!collectionContent[collectionName] && !collectionData && !loading) {
+    // Return a simple collection page instead of 404
+    return (
+      <div className="min-h-screen bg-[#1a1a1a] text-white">
+        <section className="w-full h-64 sm:h-80 md:h-[400px] bg-fixed bg-center bg-cover relative flex items-center justify-center"
+          style={{ backgroundImage: `url(${Marble})` }}>
+          <div className="absolute inset-0 bg-black/50"></div>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold relative z-10 capitalize">
+            {title}
+          </h1>
+        </section>
+        <section className="w-full px-6 sm:px-10 md:px-16 lg:px-24 py-16">
+          <p className="text-center text-gray-400">No products available in this collection yet.</p>
+        </section>
+      </div>
+    );
   }
 
   const sampleProducts = [

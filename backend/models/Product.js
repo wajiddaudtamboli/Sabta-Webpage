@@ -59,12 +59,11 @@ const ProductSchema = new mongoose.Schema({
 });
 
 // Auto-generate slug from name
-ProductSchema.pre('save', function(next) {
+ProductSchema.pre('save', async function() {
     if (this.name && !this.slug) {
         this.slug = this.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     }
     this.updatedAt = new Date();
-    next();
 });
 
 // Virtual to get all images (combines legacy and new)

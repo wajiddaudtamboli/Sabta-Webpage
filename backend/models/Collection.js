@@ -15,12 +15,11 @@ const CollectionSchema = new mongoose.Schema({
 });
 
 // Auto-generate slug from name
-CollectionSchema.pre('save', function(next) {
+CollectionSchema.pre('save', async function() {
     if (this.name && !this.slug) {
         this.slug = this.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     }
     this.updatedAt = new Date();
-    next();
 });
 
 module.exports = mongoose.model('Collection', CollectionSchema);

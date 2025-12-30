@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { api } from '../../api/api';
+import { HiEye, HiEyeOff } from 'react-icons/hi';
 
 const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [rememberMe, setRememberMe] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
@@ -164,15 +166,22 @@ const Login = () => {
                                 required
                             />
                         </div>
-                        <div className="mb-4">
+                        <div className="mb-4 relative">
                             <input
-                                type="password"
+                                type={showPassword ? "text" : "password"}
                                 placeholder="Password"
-                                className="w-full p-3 bg-white text-gray-800 rounded border-none outline-none"
+                                className="w-full p-3 pr-12 bg-white text-gray-800 rounded border-none outline-none"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
                             />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 cursor-pointer"
+                            >
+                                {showPassword ? <HiEyeOff className="w-5 h-5" /> : <HiEye className="w-5 h-5" />}
+                            </button>
                         </div>
 
                         <div className="flex flex-wrap items-center justify-between mb-6 text-sm gap-2">

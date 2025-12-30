@@ -1,10 +1,26 @@
 import { useState, useEffect, useRef } from 'react';
 import api from '../../api/api';
+import { HiEye, HiPencil, HiTrash, HiDotsVertical, HiPlay, HiPause, HiFolder, HiUpload, HiPlus, HiX, HiCheck, HiPhotograph } from 'react-icons/hi';
 
 const Products = () => {
     // Collections state - now from database
     const [collections, setCollections] = useState([]);
     const [selectedCollection, setSelectedCollection] = useState(null);
+    
+    // Collection modal state
+    const [showCollectionModal, setShowCollectionModal] = useState(false);
+    const [editingCollection, setEditingCollection] = useState(null);
+    const [collectionForm, setCollectionForm] = useState({
+        name: '',
+        description: '',
+        tagline1: '',
+        tagline2: '',
+        tagline3: '',
+        displayOrder: 1,
+        status: 'active',
+        image: ''
+    });
+    const [collectionMenuId, setCollectionMenuId] = useState(null);
     
     // Products state
     const [products, setProducts] = useState([]);
@@ -18,6 +34,7 @@ const Products = () => {
     
     // Image upload ref
     const imageInputRef = useRef(null);
+    const collectionImageRef = useRef(null);
     
     // Excel import refs and state
     const excelInputRef = useRef(null);
@@ -26,6 +43,14 @@ const Products = () => {
     
     // Dropdown menu state
     const [openMenuId, setOpenMenuId] = useState(null);
+    
+    // Toast notification
+    const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+    
+    const showToast = (message, type = 'success') => {
+        setToast({ show: true, message, type });
+        setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
+    };
     
     // Form data
     const [formData, setFormData] = useState({
@@ -109,6 +134,124 @@ const Products = () => {
         fetchCollections();
         fetchProducts();
     }, []);
+
+    // Close menus when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (!e.target.closest('.menu-container')) {
+                setCollectionMenuId(null);
+                setOpenMenuId(null);
+            }
+        };
+        document.addEventListener('click', handleClickOutside);
+        return () => document.removeEventListener('click', handleClickOutside);
+    }, []);
+
+    // Collection CRUD handlers
+    const resetCollectionForm = () => {
+        setCollectionForm({
+            name: '',
+            description: '',
+            tagline1: '',
+            tagline2: '',
+            tagline3: '',
+            displayOrder: collections.length + 1,
+            status: 'active',
+            image: ''
+        });
+        setEditingCollection(null);
+    };
+
+    const openAddCollectionModal = () => {
+        resetCollectionForm();
+        setShowCollectionModal(true);
+    };
+
+    const openEditCollectionModal = (collection) => {
+        setEditingCollection(collection);
+        setCollectionForm({
+            name: collection.name || '',
+            description: collection.description || '',
+            tagline1: collection.tagline1 || '',
+            tagline2: collection.tagline2 || '',
+            tagline3: collection.tagline3 || '',
+            displayOrder: collection.displayOrder || 1,
+            status: collection.status || 'active',
+            image: collection.image || ''
+        });
+        setShowCollectionModal(true);
+        setCollectionMenuId(null);
+    };
+
+    const handleCollectionSave = async () => {
+        if (!collectionForm.name.trim()) {
+            showToast('Collection name is required!', 'error');
+            return;
+        }
+        
+        setLoading(true);
+        try {
+            if (editingCollection) {
+                await api.put(`/collections/${editingCollection._id}`, collectionForm);
+                showToast('Collection updated successfully!');
+            } else {
+                await api.post('/collections', collectionForm);
+                showToast('Collection created successfully!');
+            }
+            
+            await fetchCollections();
+            setShowCollectionModal(false);
+            resetCollectionForm();
+        } catch (error) {
+            console.error('Error saving collection:', error);
+            showToast(error.response?.data?.message || 'Error saving collection', 'error');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleCollectionDelete = async (collection) => {
+        if (collection.productCount > 0) {
+            showToast(`Cannot delete "${collection.name}" - it has ${collection.productCount} products. Move or delete products first.`, 'error');
+            return;
+        }
+        
+        if (!window.confirm(`Are you sure you want to delete "${collection.name}"?`)) return;
+        
+        setLoading(true);
+        try {
+            await api.delete(`/collections/${collection._id}`);
+            showToast('Collection deleted successfully!');
+            await fetchCollections();
+            
+            if (selectedCollection?._id === collection._id) {
+                setSelectedCollection(null);
+                fetchProducts();
+            }
+        } catch (error) {
+            console.error('Error deleting collection:', error);
+            showToast(error.response?.data?.message || 'Error deleting collection', 'error');
+        } finally {
+            setLoading(false);
+        }
+        setCollectionMenuId(null);
+    };
+
+    const handleCollectionStatusToggle = async (collection) => {
+        setLoading(true);
+        try {
+            const newStatus = collection.status === 'active' ? 'inactive' : 'active';
+            await api.put(`/collections/${collection._id}`, { status: newStatus });
+            showToast(`Collection ${newStatus === 'active' ? 'activated' : 'deactivated'}!`);
+            await fetchCollections();
+        } catch (error) {
+            console.error('Error toggling status:', error);
+            showToast('Error updating status', 'error');
+        } finally {
+            setLoading(false);
+        }
+        setCollectionMenuId(null);
+    };
 
     // Handle collection select
     const handleCollectionSelect = (collection) => {
@@ -442,34 +585,32 @@ const Products = () => {
         return (
             <div className="relative">
                 <button onClick={toggleMenu} className="text-[#d4a853] hover:text-[#c49743] cursor-pointer p-1">
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
-                    </svg>
+                    <HiDotsVertical className="w-5 h-5" />
                 </button>
                 {isOpen && (
                     <div className="absolute right-0 top-full mt-1 bg-[#2a2a2a] border border-gray-600 rounded shadow-lg z-50 min-w-[120px]">
                         {onView && (
                             <button
                                 onClick={(e) => handleAction(onView, e)}
-                                className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-[#3a3a3a] cursor-pointer"
+                                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-white hover:bg-[#3a3a3a] cursor-pointer"
                             >
-                                👁️ View
+                                <HiEye className="w-4 h-4 text-[#d4a853]" /> View
                             </button>
                         )}
                         {onEdit && (
                             <button
                                 onClick={(e) => handleAction(onEdit, e)}
-                                className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-[#3a3a3a] cursor-pointer"
+                                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-white hover:bg-[#3a3a3a] cursor-pointer"
                             >
-                                ✏️ Edit
+                                <HiPencil className="w-4 h-4 text-[#d4a853]" /> Edit
                             </button>
                         )}
                         {onDelete && (
                             <button
                                 onClick={(e) => handleAction(onDelete, e)}
-                                className="block w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-[#3a3a3a] cursor-pointer"
+                                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-[#3a3a3a] cursor-pointer"
                             >
-                                🗑️ Delete
+                                <HiTrash className="w-4 h-4" /> Delete
                             </button>
                         )}
                     </div>
@@ -478,25 +619,8 @@ const Products = () => {
         );
     };
 
-    // Close menu when clicking outside
-    useEffect(() => {
-        const handleClickOutside = () => setOpenMenuId(null);
-        document.addEventListener('click', handleClickOutside);
-        return () => document.removeEventListener('click', handleClickOutside);
-    }, []);
-
     return (
         <div className="p-2 md:p-6 text-white min-h-screen w-full max-w-full overflow-x-hidden">
-            {/* Hidden file input for image upload */}
-            <input
-                type="file"
-                ref={imageInputRef}
-                onChange={handleImageUpload}
-                accept="image/*"
-                multiple
-                className="hidden"
-            />
-            
             {/* Loading overlay */}
             {loading && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -507,17 +631,128 @@ const Products = () => {
                 </div>
             )}
 
+            {/* Toast Notification */}
+            {toast.show && (
+                <div className={`fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg ${toast.type === 'error' ? 'bg-red-600' : 'bg-green-600'} text-white`}>
+                    {toast.message}
+                </div>
+            )}
+
+            {/* Collection Modal */}
+            {showCollectionModal && (
+                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50" onClick={() => setShowCollectionModal(false)}>
+                    <div className="bg-[#1a1a1a] rounded-lg p-6 w-full max-w-md border border-gray-700" onClick={e => e.stopPropagation()}>
+                        <h3 className="text-xl font-semibold mb-4 text-[#d4a853]">
+                            {editingCollection ? 'Edit Collection' : 'Add New Collection'}
+                        </h3>
+                        
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm mb-1 text-gray-300">Collection Name *</label>
+                                <input
+                                    type="text"
+                                    value={collectionForm.name}
+                                    onChange={(e) => setCollectionForm({...collectionForm, name: e.target.value})}
+                                    placeholder="e.g., Italian Marble"
+                                    className="w-full bg-[#2a2a2a] border border-gray-600 rounded px-3 py-2 text-white"
+                                />
+                            </div>
+                            
+                            <div>
+                                <label className="block text-sm mb-1 text-gray-300">Description</label>
+                                <textarea
+                                    value={collectionForm.description}
+                                    onChange={(e) => setCollectionForm({...collectionForm, description: e.target.value})}
+                                    placeholder="Brief description of this collection"
+                                    className="w-full bg-[#2a2a2a] border border-gray-600 rounded px-3 py-2 text-white h-20 resize-none"
+                                />
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm mb-1 text-gray-300">Display Order</label>
+                                    <input
+                                        type="number"
+                                        value={collectionForm.displayOrder}
+                                        onChange={(e) => setCollectionForm({...collectionForm, displayOrder: parseInt(e.target.value) || 1})}
+                                        className="w-full bg-[#2a2a2a] border border-gray-600 rounded px-3 py-2 text-white"
+                                    />
+                                </div>
+                                
+                                <div>
+                                    <label className="block text-sm mb-1 text-gray-300">Status</label>
+                                    <select
+                                        value={collectionForm.status}
+                                        onChange={(e) => setCollectionForm({...collectionForm, status: e.target.value})}
+                                        className="w-full bg-[#2a2a2a] border border-gray-600 rounded px-3 py-2 text-white"
+                                    >
+                                        <option value="active">Active</option>
+                                        <option value="inactive">Inactive</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label className="block text-sm mb-1 text-gray-300">Tagline 1</label>
+                                <input
+                                    type="text"
+                                    value={collectionForm.tagline1}
+                                    onChange={(e) => setCollectionForm({...collectionForm, tagline1: e.target.value})}
+                                    placeholder="Primary tagline"
+                                    className="w-full bg-[#2a2a2a] border border-gray-600 rounded px-3 py-2 text-white"
+                                />
+                            </div>
+                            
+                            <div>
+                                <label className="block text-sm mb-1 text-gray-300">Image URL</label>
+                                <input
+                                    type="text"
+                                    value={collectionForm.image}
+                                    onChange={(e) => setCollectionForm({...collectionForm, image: e.target.value})}
+                                    placeholder="https://example.com/image.jpg"
+                                    className="w-full bg-[#2a2a2a] border border-gray-600 rounded px-3 py-2 text-white"
+                                />
+                                {collectionForm.image && (
+                                    <div className="mt-2">
+                                        <img 
+                                            src={collectionForm.image} 
+                                            alt="Preview" 
+                                            className="w-20 h-20 object-cover rounded border border-gray-600"
+                                            onError={(e) => e.target.style.display = 'none'}
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                        
+                        <div className="flex gap-3 mt-6">
+                            <button
+                                onClick={handleCollectionSave}
+                                className="flex-1 bg-[#d4a853] text-black py-2 rounded font-medium hover:bg-[#c49743] cursor-pointer"
+                            >
+                                {editingCollection ? 'Update' : 'Create'}
+                            </button>
+                            <button
+                                onClick={() => { setShowCollectionModal(false); resetCollectionForm(); }}
+                                className="flex-1 bg-gray-700 text-white py-2 rounded font-medium hover:bg-gray-600 cursor-pointer"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Collections Section */}
             <div className="mb-8">
                 <div className="flex items-center gap-2 mb-4">
-                    <span className="text-lg font-semibold">1</span>
                     <span className="text-lg font-semibold">Collections</span>
                     <span className="text-[#d4a853] text-sm italic ml-2">- Listed Collections will be visible on website, select a collection to view products.</span>
                     <button
-                        onClick={() => { setSelectedCollection(null); fetchProducts(); }}
-                        className={`ml-auto px-4 py-1 text-sm rounded cursor-pointer ${!selectedCollection ? 'bg-[#d4a853] text-black' : 'bg-gray-700 text-white hover:bg-gray-600'}`}
+                        onClick={openAddCollectionModal}
+                        className="ml-auto bg-[#d4a853] text-black px-4 py-1 text-sm rounded hover:bg-[#c49743] cursor-pointer"
                     >
-                        View All Products
+                        + Add Collection
                     </button>
                 </div>
 
@@ -530,7 +765,7 @@ const Products = () => {
                                 <th className="p-3 text-left">Display Order</th>
                                 <th className="p-3 text-left">Product Count</th>
                                 <th className="p-3 text-left">Status</th>
-                                <th className="p-3 text-left"></th>
+                                <th className="p-3 text-left">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -554,180 +789,46 @@ const Products = () => {
                                         </span>
                                     </td>
                                     <td className="p-3">
-                                        <button 
-                                            onClick={(e) => { e.stopPropagation(); handleCollectionSelect(collection); }}
-                                            className="text-[#d4a853] hover:text-[#c49743] cursor-pointer text-sm"
-                                        >
-                                            Select →
-                                        </button>
+                                        <div className="relative menu-container">
+                                            <button 
+                                                onClick={(e) => { 
+                                                    e.stopPropagation(); 
+                                                    setCollectionMenuId(collectionMenuId === collection._id ? null : collection._id);
+                                                }}
+                                                className="text-gray-400 hover:text-white p-1 cursor-pointer"
+                                            >
+                                                <HiDotsVertical className="w-5 h-5" />
+                                            </button>
+                                            
+                                            {collectionMenuId === collection._id && (
+                                                <div className="absolute right-0 top-8 bg-[#2a2a2a] border border-gray-600 rounded-lg shadow-xl z-20 min-w-[150px]">
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); openEditCollectionModal(collection); }}
+                                                        className="w-full flex items-center gap-2 px-4 py-2 hover:bg-[#3a3a3a] text-sm cursor-pointer"
+                                                    >
+                                                        <HiPencil className="w-4 h-4 text-[#d4a853]" /> Edit
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); handleCollectionStatusToggle(collection); }}
+                                                        className="w-full flex items-center gap-2 px-4 py-2 hover:bg-[#3a3a3a] text-sm cursor-pointer"
+                                                    >
+                                                        {collection.status === 'active' ? <><HiPause className="w-4 h-4 text-orange-400" /> Deactivate</> : <><HiPlay className="w-4 h-4 text-green-400" /> Activate</>}
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); handleCollectionDelete(collection); }}
+                                                        className="w-full flex items-center gap-2 px-4 py-2 hover:bg-red-600/30 text-red-400 text-sm cursor-pointer"
+                                                    >
+                                                        <HiTrash className="w-4 h-4" /> Delete
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
                                     </td>
                                 </tr>
                             )) : (
                                 <tr className="border-b border-gray-700">
                                     <td colSpan="6" className="p-6 text-center text-gray-500">
-                                        Loading collections from database...
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            {/* SPILL / Excel Import Section */}
-            <div className="mb-8">
-                <div className="flex items-center gap-2 mb-4">
-                    <span className="text-lg font-semibold">SPILL</span>
-                    <span className="text-[#d4a853] text-sm italic ml-2">- Import products from CSV/Excel file. Format: Code, Product Name, Color, Origin, Is Bookmatch, Is Translucent</span>
-                    <input
-                        type="file"
-                        ref={excelInputRef}
-                        onChange={handleExcelImport}
-                        accept=".csv,.xlsx,.xls"
-                        className="hidden"
-                    />
-                    <button
-                        onClick={() => excelInputRef.current?.click()}
-                        className="ml-auto bg-[#d4a853] text-black px-4 py-1 text-sm rounded hover:bg-[#c49743] cursor-pointer"
-                    >
-                        📁 Import CSV
-                    </button>
-                </div>
-
-                <div className="bg-[#1a1a1a] rounded border border-gray-700 overflow-x-auto">
-                    <table className="w-full text-sm">
-                        <thead>
-                            <tr className="border-b border-gray-700 bg-[#2a2a2a]">
-                                <th className="p-3 text-left">Sr No</th>
-                                <th className="p-3 text-left">Code</th>
-                                <th className="p-3 text-left">Product Name</th>
-                                <th className="p-3 text-left">Color</th>
-                                <th className="p-3 text-left">Origin</th>
-                                <th className="p-3 text-left">Is Bookmatch</th>
-                                <th className="p-3 text-left">Is Translucent</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {showImportPreview && importPreview.length > 0 ? (
-                                importPreview.map((item, index) => (
-                                    <tr key={index} className="border-b border-gray-700 bg-green-900/20">
-                                        <td className="p-3">{item.rowNum}</td>
-                                        <td className="p-3">{item.code || 'Auto'}</td>
-                                        <td className="p-3">{item.name}</td>
-                                        <td className="p-3">{item.color}</td>
-                                        <td className="p-3">{item.origin}</td>
-                                        <td className="p-3">{item.isBookmatch ? 'Yes' : 'No'}</td>
-                                        <td className="p-3">{item.isTranslucent ? 'Yes' : 'No'}</td>
-                                    </tr>
-                                ))
-                            ) : (
-                                <>
-                                    <tr className="border-b border-gray-700 text-gray-500">
-                                        <td className="p-3">1</td>
-                                        <td className="p-3">SG01099</td>
-                                        <td className="p-3">Light Emperador</td>
-                                        <td className="p-3">Beige</td>
-                                        <td className="p-3">Turkey</td>
-                                        <td className="p-3">Yes</td>
-                                        <td className="p-3">No</td>
-                                    </tr>
-                                    <tr className="border-b border-gray-700 text-gray-500">
-                                        <td className="p-3">2</td>
-                                        <td className="p-3">SG01100</td>
-                                        <td className="p-3">Dark Emperador</td>
-                                        <td className="p-3">Brown</td>
-                                        <td className="p-3">Spain</td>
-                                        <td className="p-3">No</td>
-                                        <td className="p-3">No</td>
-                                    </tr>
-                                    <tr>
-                                        <td colSpan="7" className="p-3 text-center text-gray-500 text-xs">
-                                            ↑ Example format. Click "Import CSV" to upload your file.
-                                        </td>
-                                    </tr>
-                                </>
-                            )}
-                        </tbody>
-                    </table>
-                    
-                    {showImportPreview && importPreview.length > 0 && (
-                        <div className="p-4 border-t border-gray-700 flex gap-4 justify-center">
-                            <button
-                                onClick={confirmImport}
-                                disabled={!selectedCollection}
-                                className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 disabled:opacity-50 cursor-pointer"
-                            >
-                                ✅ Import {importPreview.length} Products {selectedCollection ? `to "${selectedCollection.name}"` : '(Select Collection First)'}
-                            </button>
-                            <button
-                                onClick={() => { setShowImportPreview(false); setImportPreview([]); }}
-                                className="bg-gray-600 text-white px-6 py-2 rounded hover:bg-gray-700 cursor-pointer"
-                            >
-                                ❌ Cancel
-                            </button>
-                        </div>
-                    )}
-                </div>
-            </div>
-
-            {/* Product View Section */}
-            <div className="mb-8">
-                <div className="flex items-center gap-2 mb-4">
-                    <span className="text-lg font-semibold">1</span>
-                    <span className="text-lg font-semibold">Product View</span>
-                    <span className="text-[#d4a853] text-sm italic ml-2">- Option required to define the color sequence and display order.</span>
-                </div>
-
-                <div className="bg-[#1a1a1a] rounded border border-gray-700 overflow-x-auto">
-                    <table className="w-full text-sm">
-                        <thead>
-                            <tr className="border-b border-gray-700">
-                                <th className="p-3 text-left">Sr No</th>
-                                <th className="p-3 text-left">Image</th>
-                                <th className="p-3 text-left">Code</th>
-                                <th className="p-3 text-left">Product Name</th>
-                                <th className="p-3 text-left">Color</th>
-                                <th className="p-3 text-left">Origin</th>
-                                <th className="p-3 text-left">Is Bookmatch</th>
-                                <th className="p-3 text-left">Is Translucent</th>
-                                <th className="p-3 text-left">Is Natural</th>
-                                <th className="p-3 text-left"></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {products.length > 0 ? products.map((product, index) => (
-                                <tr key={product._id} className="border-b border-gray-700 hover:bg-[#2a2a2a]">
-                                    <td className="p-3">{index + 1}</td>
-                                    <td className="p-3">
-                                        <div className="w-12 h-12 bg-gray-700 rounded overflow-hidden">
-                                            {product.images?.[0] && <img src={product.images[0]} alt="" className="w-full h-full object-cover" />}
-                                        </div>
-                                    </td>
-                                    <td className="p-3">{product.code || 'SG01099'}</td>
-                                    <td className="p-3">{product.name}</td>
-                                    <td className="p-3">{product.color || 'Beige'}</td>
-                                    <td className="p-3">{product.origin || 'Turkey'}</td>
-                                    <td className="p-3">{product.isBookmatch ? 'Yes' : 'No'}</td>
-                                    <td className="p-3">{product.isTranslucent ? 'Yes' : 'No'}</td>
-                                    <td className="p-3">{product.isNatural !== false ? 'Yes' : 'No'}</td>
-                                    <td className="p-3">
-                                        <MenuButton 
-                                            product={product}
-                                            onView={() => {
-                                                // Open product detail in new tab
-                                                window.open(`/products/${product.slug || product._id}`, '_blank');
-                                            }}
-                                            onEdit={() => handleProductSelect(product)}
-                                            onDelete={() => handleDelete(product._id)}
-                                        />
-                                    </td>
-                                </tr>
-                            )) : (
-                                <tr className="border-b border-gray-700">
-                                    <td colSpan="10" className="p-6 text-center text-gray-500">
-                                        {selectedCollection 
-                                            ? 'No products in this collection. Click "+ Add New Product" to create one.'
-                                            : 'Select a collection above to view its products, or click "+ Add New Product" to create one.'}
+                                        {loading ? 'Loading collections from database...' : 'No collections found. Click "+ Add Collection" to create one.'}
                                     </td>
                                 </tr>
                             )}
@@ -1089,22 +1190,6 @@ const Products = () => {
                             </div>
                         )}
                     </div>
-                </div>
-            )}
-
-            {/* Add New Product Button */}
-            {!isEditing && (
-                <div className="flex justify-center">
-                    <button
-                        onClick={() => {
-                            setIsEditing(true);
-                            setSelectedProduct(null);
-                            resetForm();
-                        }}
-                        className="bg-[#d4a853] text-black px-6 py-2 rounded font-medium hover:bg-[#c49743] cursor-pointer"
-                    >
-                        + Add New Product
-                    </button>
                 </div>
             )}
         </div>

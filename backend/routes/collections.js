@@ -136,11 +136,36 @@ router.put('/:id', authMiddleware, async (req, res) => {
     }
 });
 
-// Delete collection
+// Delete collection (restrict if products exist)
 router.delete('/:id', authMiddleware, async (req, res) => {
     try {
+        const collection = await Collection.findById(req.params.id);
+        if (!collection) {
+            return res.status(404).json({ message: 'Collection not found' });
+        }
+        
+        // Check if any products belong to this collection
+        const searchTerm = collection.name
+            .replace(' Series', '')
+            .replace(' Collections', '')
+            .replace(' Collection', '');
+        
+        const productCount = await Product.countDocuments({
+            $or: [
+                { collectionId: collection._id },
+                { collectionName: { $regex: new RegExp(collection.name, 'i') } },
+                { category: { $regex: new RegExp(searchTerm, 'i') } }
+            ]
+        });
+        
+        if (productCount > 0) {
+            return res.status(400).json({ 
+                message: `Cannot delete collection "${collection.name}" - it has ${productCount} products. Move or delete products first.` 
+            });
+        }
+        
         await Collection.findByIdAndDelete(req.params.id);
-        res.json({ message: 'Collection deleted' });
+        res.json({ message: 'Collection deleted successfully' });
     } catch (err) {
         console.error('Error deleting collection:', err);
         res.status(500).json({ message: 'Server error' });

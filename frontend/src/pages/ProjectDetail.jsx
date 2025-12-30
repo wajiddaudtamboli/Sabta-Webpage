@@ -1,13 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../api/api';
+import { FaChevronLeft, FaChevronRight, FaTimes, FaTag } from 'react-icons/fa';
 
 const ProjectDetail = () => {
     const { slug } = useParams();
     const [project, setProject] = useState(null);
     const [loading, setLoading] = useState(true);
     const [lightboxOpen, setLightboxOpen] = useState(false);
+    const [lightboxIndex, setLightboxIndex] = useState(0);
 
     const fetchProject = useCallback(async () => {
         try {
@@ -23,6 +25,37 @@ const ProjectDetail = () => {
     useEffect(() => {
         fetchProject();
     }, [fetchProject]);
+
+    // Get all images (featured + gallery)
+    const getAllImages = () => {
+        if (!project) return [];
+        const images = [];
+        if (project.featuredImage) images.push({ url: project.featuredImage, caption: 'Featured' });
+        else if (project.imageUrl) images.push({ url: project.imageUrl, caption: 'Featured' });
+        if (project.gallery?.length > 0) {
+            project.gallery.forEach(img => {
+                if (img.url && !images.find(i => i.url === img.url)) {
+                    images.push(img);
+                }
+            });
+        }
+        return images;
+    };
+
+    const allImages = getAllImages();
+
+    const openLightbox = (index) => {
+        setLightboxIndex(index);
+        setLightboxOpen(true);
+    };
+
+    const nextImage = () => {
+        setLightboxIndex((prev) => (prev + 1) % allImages.length);
+    };
+
+    const prevImage = () => {
+        setLightboxIndex((prev) => (prev - 1 + allImages.length) % allImages.length);
+    };
 
     const getStatusColor = (status) => {
         switch (status) {
@@ -63,35 +96,70 @@ const ProjectDetail = () => {
 
     return (
         <div className="min-h-screen bg-[#1a1a1a] text-white">
-            {}
-            {lightboxOpen && (
-                <div 
-                    className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center"
-                    onClick={() => setLightboxOpen(false)}
-                >
-                    <button
+            {/* Lightbox Gallery */}
+            <AnimatePresence>
+                {lightboxOpen && allImages.length > 0 && (
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center"
                         onClick={() => setLightboxOpen(false)}
-                        className="absolute top-4 right-4 text-white text-4xl hover:text-[#d4a853] z-50 cursor-pointer"
                     >
-                        ×
-                    </button>
-                    <img
-                        src={project.imageUrl}
-                        alt={project.title}
-                        className="max-w-[90vw] max-h-[90vh] object-contain"
-                        onClick={(e) => e.stopPropagation()}
-                    />
-                </div>
-            )}
+                        <button
+                            onClick={() => setLightboxOpen(false)}
+                            className="absolute top-4 right-4 text-white text-3xl hover:text-[#d4a853] z-50 cursor-pointer p-2"
+                        >
+                            <FaTimes />
+                        </button>
+                        
+                        {allImages.length > 1 && (
+                            <>
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); prevImage(); }}
+                                    className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-black/50 flex items-center justify-center text-white hover:bg-[#d4a853] hover:text-black transition cursor-pointer"
+                                >
+                                    <FaChevronLeft />
+                                </button>
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); nextImage(); }}
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-black/50 flex items-center justify-center text-white hover:bg-[#d4a853] hover:text-black transition cursor-pointer"
+                                >
+                                    <FaChevronRight />
+                                </button>
+                            </>
+                        )}
+                        
+                        <img
+                            src={allImages[lightboxIndex]?.url}
+                            alt={allImages[lightboxIndex]?.caption || project.title}
+                            className="max-w-[90vw] max-h-[85vh] object-contain"
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                        
+                        {allImages.length > 1 && (
+                            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                                {allImages.map((_, idx) => (
+                                    <button
+                                        key={idx}
+                                        onClick={(e) => { e.stopPropagation(); setLightboxIndex(idx); }}
+                                        className={`w-2 h-2 rounded-full cursor-pointer transition ${idx === lightboxIndex ? 'bg-[#d4a853]' : 'bg-white/50 hover:bg-white'}`}
+                                    />
+                                ))}
+                            </div>
+                        )}
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
-            {}
+            {/* Hero Section */}
             <section className="relative h-[60vh] min-h-[500px]">
                 <div className="absolute inset-0">
                     <img
-                        src={project.imageUrl || 'https://via.placeholder.com/1920x1080?text=Project'}
+                        src={project.featuredImage || project.imageUrl || 'https://via.placeholder.com/1920x1080?text=Project'}
                         alt={project.title}
                         className="w-full h-full object-cover cursor-pointer"
-                        onClick={() => project.imageUrl && setLightboxOpen(true)}
+                        onClick={() => allImages.length > 0 && openLightbox(0)}
                     />
                     <div className="absolute inset-0 bg-linear-to-t from-[#1a1a1a] via-black/50 to-black/30"></div>
                 </div>
@@ -106,8 +174,13 @@ const ProjectDetail = () => {
                             ← Back to Projects
                         </Link>
                         <div className="flex flex-wrap items-center gap-3 mb-4">
-                            <span className={`px-4 py-1 ${getStatusColor(project.status)} text-white font-medium rounded`}>
-                                {getStatusLabel(project.status)}
+                            {project.category && (
+                                <span className="px-4 py-1 bg-[#2a2a2a] border border-[#d4a853]/50 text-[#d4a853] font-medium rounded flex items-center gap-2">
+                                    <FaTag className="text-sm" /> {project.category}
+                                </span>
+                            )}
+                            <span className={`px-4 py-1 ${getStatusColor(project.projectStatus || project.status)} text-white font-medium rounded`}>
+                                {getStatusLabel(project.projectStatus || project.status)}
                             </span>
                             <span className="px-4 py-1 bg-[#d4a853] text-black font-medium rounded">
                                 {project.year}
@@ -145,23 +218,40 @@ const ProjectDetail = () => {
                                 </div>
                             )}
 
-                            {}
-                            {project.imageUrl && (
+                            {/* Scope of Work */}
+                            {project.scope && (
+                                <div className="mb-12">
+                                    <h2 className="text-2xl font-bold text-[#d4a853] mb-4">Scope of Work</h2>
+                                    <p className="text-gray-300 leading-relaxed whitespace-pre-line">
+                                        {project.scope}
+                                    </p>
+                                </div>
+                            )}
+
+                            {/* Project Gallery */}
+                            {allImages.length > 0 && (
                                 <div>
-                                    <h2 className="text-2xl font-bold text-[#d4a853] mb-6">Project Image</h2>
-                                    <motion.div
-                                        initial={{ opacity: 0, scale: 0.9 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        transition={{ duration: 0.3 }}
-                                        className="cursor-pointer overflow-hidden rounded-lg group"
-                                        onClick={() => setLightboxOpen(true)}
-                                    >
-                                        <img
-                                            src={project.imageUrl}
-                                            alt={project.title}
-                                            className="w-full h-auto object-cover transition-transform duration-300 group-hover:scale-105"
-                                        />
-                                    </motion.div>
+                                    <h2 className="text-2xl font-bold text-[#d4a853] mb-6">
+                                        Project Gallery ({allImages.length} {allImages.length === 1 ? 'image' : 'images'})
+                                    </h2>
+                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                        {allImages.map((img, index) => (
+                                            <motion.div
+                                                key={index}
+                                                initial={{ opacity: 0, scale: 0.9 }}
+                                                animate={{ opacity: 1, scale: 1 }}
+                                                transition={{ duration: 0.3, delay: index * 0.05 }}
+                                                className="cursor-pointer overflow-hidden rounded-lg group aspect-square"
+                                                onClick={() => openLightbox(index)}
+                                            >
+                                                <img
+                                                    src={img.url}
+                                                    alt={img.caption || `${project.title} - ${index + 1}`}
+                                                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                                                />
+                                            </motion.div>
+                                        ))}
+                                    </div>
                                 </div>
                             )}
                         </div>
@@ -172,10 +262,21 @@ const ProjectDetail = () => {
                                 <h3 className="text-xl font-bold text-[#d4a853] mb-6">Project Details</h3>
                                 
                                 <div className="space-y-4">
-                                    <div>
-                                        <p className="text-gray-400 text-sm">Client</p>
-                                        <p className="text-white font-medium">{project.clientName}</p>
-                                    </div>
+                                    {project.category && (
+                                        <div>
+                                            <p className="text-gray-400 text-sm">Category</p>
+                                            <p className="text-white font-medium flex items-center gap-2">
+                                                <FaTag className="text-[#d4a853] text-sm" /> {project.category}
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    {project.clientName && (
+                                        <div>
+                                            <p className="text-gray-400 text-sm">Client</p>
+                                            <p className="text-white font-medium">{project.clientName}</p>
+                                        </div>
+                                    )}
 
                                     {project.location && (
                                         <div>
@@ -191,10 +292,23 @@ const ProjectDetail = () => {
 
                                     <div>
                                         <p className="text-gray-400 text-sm">Status</p>
-                                        <span className={`inline-block px-3 py-1 ${getStatusColor(project.status)} text-white font-medium rounded text-sm`}>
-                                            {getStatusLabel(project.status)}
+                                        <span className={`inline-block px-3 py-1 ${getStatusColor(project.projectStatus || project.status)} text-white font-medium rounded text-sm`}>
+                                            {getStatusLabel(project.projectStatus || project.status)}
                                         </span>
                                     </div>
+
+                                    {project.materials?.length > 0 && (
+                                        <div>
+                                            <p className="text-gray-400 text-sm">Materials Used</p>
+                                            <div className="flex flex-wrap gap-2 mt-1">
+                                                {project.materials.map((material, idx) => (
+                                                    <span key={idx} className="px-2 py-1 bg-[#1a1a1a] text-gray-300 text-xs rounded">
+                                                        {material}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {}

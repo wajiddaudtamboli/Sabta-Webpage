@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { HiCamera, HiPhotograph } from 'react-icons/hi';
+import { HiCamera, HiPhotograph, HiEye, HiTrash, HiClipboardCopy, HiX } from 'react-icons/hi';
 import { api } from '../../api/api';
 
 const Media = () => {
@@ -94,7 +94,7 @@ const Media = () => {
 
             {/* Add Media Section */}
             <div className="bg-[#2a2a2a] rounded-lg border border-gray-700 p-4 sm:p-6 mb-6">
-                <h2 className="text-base sm:text-lg font-semibold mb-4" style={{color: '#d4a853'}}>➕ Add Media URL</h2>
+                <h2 className="text-base sm:text-lg font-semibold mb-4 flex items-center gap-2" style={{color: '#d4a853'}}><HiPhotograph className="w-5 h-5" /> Add Media URL</h2>
                 <form onSubmit={handleAddUrl} className="flex flex-col sm:flex-row gap-3">
                     <input
                         type="text"
@@ -107,17 +107,20 @@ const Media = () => {
                     <button 
                         type="submit"
                         disabled={uploading}
-                        className="px-6 py-3 bg-[#d4a853] font-semibold rounded cursor-pointer hover:bg-[#c49743] disabled:opacity-50"
+                        className="px-6 py-3 bg-[#d4a853] font-semibold rounded cursor-pointer hover:bg-[#c49743] disabled:opacity-50 flex items-center justify-center gap-2"
                         style={{color: '#000'}}
                     >
-                        {uploading ? '⏳ Adding...' : '✅ Add URL'}
+                        {uploading ? 'Adding...' : 'Add URL'}
                     </button>
                 </form>
             </div>
 
             {/* Media Grid/List */}
             {loading ? (
-                <div className="text-center py-12" style={{color: '#9ca3af'}}>⏳ Loading media...</div>
+                <div className="text-center py-12" style={{color: '#9ca3af'}}>
+                    <div className="animate-spin w-8 h-8 border-4 border-[#d4a853] border-t-transparent rounded-full mx-auto mb-2"></div>
+                    Loading media...
+                </div>
             ) : mediaList.length === 0 ? (
                 <div className="text-center py-12 bg-[#2a2a2a] rounded-lg border border-gray-700">
                     <div className="text-6xl mb-4">
@@ -161,21 +164,21 @@ const Media = () => {
                                         className="flex-1 py-2 px-3 bg-[#1a1a1a] rounded text-xs font-medium cursor-pointer hover:bg-[#3a3a3a] flex items-center justify-center gap-1"
                                         style={{color: '#d4a853'}}
                                     >
-                                        👁️ View
+                                        <HiEye className="w-4 h-4" /> View
                                     </button>
                                     <button
                                         onClick={() => copyToClipboard(media.url)}
                                         className="flex-1 py-2 px-3 bg-[#d4a853] rounded text-xs font-medium cursor-pointer hover:bg-[#c49743] flex items-center justify-center gap-1"
                                         style={{color: '#000'}}
                                     >
-                                        📋 Copy
+                                        <HiClipboardCopy className="w-4 h-4" /> Copy
                                     </button>
                                     <button
                                         onClick={() => handleDelete(media._id)}
                                         className="py-2 px-3 bg-red-600 rounded text-xs font-medium cursor-pointer hover:bg-red-700 flex items-center justify-center"
                                         style={{color: '#fff'}}
                                     >
-                                        🗑️
+                                        <HiTrash className="w-4 h-4" />
                                     </button>
                                 </div>
                             </div>
@@ -191,7 +194,7 @@ const Media = () => {
                                 <img 
                                     src={media.url} 
                                     alt="Preview" 
-                                    className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded flex-shrink-0 cursor-pointer"
+                                    className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded shrink-0 cursor-pointer"
                                     onClick={() => setSelectedMedia(media)}
                                     onError={(e) => { e.target.src = 'https://placehold.co/80x80?text=Error'; }}
                                 />
@@ -200,24 +203,24 @@ const Media = () => {
                                     <div className="flex flex-wrap gap-2">
                                         <button
                                             onClick={() => setSelectedMedia(media)}
-                                            className="py-1.5 px-3 bg-[#1a1a1a] rounded text-xs cursor-pointer"
+                                            className="py-1.5 px-3 bg-[#1a1a1a] rounded text-xs cursor-pointer flex items-center gap-1"
                                             style={{color: '#d4a853'}}
                                         >
-                                            👁️ View
+                                            <HiEye className="w-4 h-4" /> View
                                         </button>
                                         <button
                                             onClick={() => copyToClipboard(media.url)}
-                                            className="py-1.5 px-3 bg-[#d4a853] rounded text-xs cursor-pointer"
+                                            className="py-1.5 px-3 bg-[#d4a853] rounded text-xs cursor-pointer flex items-center gap-1"
                                             style={{color: '#000'}}
                                         >
-                                            📋 Copy
+                                            <HiClipboardCopy className="w-4 h-4" /> Copy
                                         </button>
                                         <button
                                             onClick={() => handleDelete(media._id)}
-                                            className="py-1.5 px-3 bg-red-600 rounded text-xs cursor-pointer"
+                                            className="py-1.5 px-3 bg-red-600 rounded text-xs cursor-pointer flex items-center gap-1"
                                             style={{color: '#fff'}}
                                         >
-                                            🗑️ Delete
+                                            <HiTrash className="w-4 h-4" /> Delete
                                         </button>
                                     </div>
                                 </div>
@@ -297,11 +300,11 @@ const Media = () => {
                                     </div>
 
                                     {/* Frame Preview */}
-                                    <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg p-4 flex justify-center">
+                                    <div className="bg-linear-to-br from-gray-800 to-gray-900 rounded-lg p-4 flex justify-center">
                                         {deviceFrame === 'mobile' && (
                                             <div className="bg-gray-900 rounded-[20px] p-2 shadow-xl">
                                                 <div className="w-3 h-3 bg-black rounded-full mx-auto mb-1"></div>
-                                                <div className="bg-white rounded-[16px] overflow-hidden" style={{width: '120px', height: '213px'}}>
+                                                <div className="bg-white rounded-2xl overflow-hidden" style={{width: '120px', height: '213px'}}>
                                                     <img src={selectedMedia.url} alt="Mobile" className="w-full h-full object-contain"/>
                                                 </div>
                                                 <div className="w-8 h-1 bg-gray-700 rounded-full mx-auto mt-1"></div>
@@ -346,10 +349,10 @@ const Media = () => {
                                     />
                                     <button 
                                         onClick={() => copyToClipboard(selectedMedia.url)}
-                                        className="px-4 py-2 bg-[#d4a853] rounded text-xs font-medium cursor-pointer"
+                                        className="px-4 py-2 bg-[#d4a853] rounded text-xs font-medium cursor-pointer flex items-center gap-1"
                                         style={{color: '#000'}}
                                     >
-                                        📋
+                                        <HiClipboardCopy className="w-4 h-4" />
                                     </button>
                                 </div>
                             </div>
@@ -372,17 +375,17 @@ const Media = () => {
                             <div className="flex gap-3">
                                 <button 
                                     onClick={() => setSelectedMedia(null)}
-                                    className="flex-1 py-3 bg-gray-600 rounded font-medium cursor-pointer hover:bg-gray-700"
+                                    className="flex-1 py-3 bg-gray-600 rounded font-medium cursor-pointer hover:bg-gray-700 flex items-center justify-center gap-2"
                                     style={{color: '#ffffff'}}
                                 >
-                                    Close
+                                    <HiX className="w-5 h-5" /> Close
                                 </button>
                                 <button 
                                     onClick={() => handleDelete(selectedMedia._id)}
-                                    className="flex-1 py-3 bg-red-600 rounded font-medium cursor-pointer hover:bg-red-700"
+                                    className="flex-1 py-3 bg-red-600 rounded font-medium cursor-pointer hover:bg-red-700 flex items-center justify-center gap-2"
                                     style={{color: '#ffffff'}}
                                 >
-                                    🗑️ Delete
+                                    <HiTrash className="w-5 h-5" /> Delete
                                 </button>
                             </div>
                         </div>

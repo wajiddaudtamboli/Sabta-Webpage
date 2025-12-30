@@ -35,13 +35,18 @@ const uploadToCloudinary = async (fileBuffer, folder = 'sabta/projects') => {
 };
 
 
+// Public route - only active projects
 router.get('/', async (req, res) => {
     try {
-        const { status } = req.query;
-        let query = {};
+        const { status, category } = req.query;
+        let query = { isActive: true }; // Only show active projects publicly
         
         if (status && ['ongoing', 'completed', 'awarded'].includes(status)) {
-            query.status = status;
+            query.projectStatus = status;
+        }
+        
+        if (category && ['Residential', 'Commercial', 'Hospitality', 'Healthcare', 'Educational', 'Government', 'Retail', 'Other'].includes(category)) {
+            query.category = category;
         }
         
         const projects = await Project.find(query).sort({ displayOrder: 1, year: -1, createdAt: -1 });
@@ -53,9 +58,27 @@ router.get('/', async (req, res) => {
 });
 
 
+// Admin route - all projects including inactive
 router.get('/admin', authMiddleware, async (req, res) => {
     try {
-        const projects = await Project.find().sort({ displayOrder: 1, createdAt: -1 });
+        const { status, category, active } = req.query;
+        let query = {};
+        
+        if (status && ['ongoing', 'completed', 'awarded'].includes(status)) {
+            query.projectStatus = status;
+        }
+        
+        if (category && category !== 'all') {
+            query.category = category;
+        }
+        
+        if (active === 'true') {
+            query.isActive = true;
+        } else if (active === 'false') {
+            query.isActive = false;
+        }
+        
+        const projects = await Project.find(query).sort({ displayOrder: 1, createdAt: -1 });
         res.json(projects);
     } catch (err) {
         console.error('Error fetching projects:', err);
@@ -67,14 +90,25 @@ router.get('/admin', authMiddleware, async (req, res) => {
 router.get('/counts', async (req, res) => {
     try {
         const counts = await Project.aggregate([
-            { $group: { _id: '$status', count: { $sum: 1 } } }
+            { $group: { _id: '$projectStatus', count: { $sum: 1 } } }
+        ]);
+        
+        const categoryCounts = await Project.aggregate([
+            { $group: { _id: '$category', count: { $sum: 1 } } }
+        ]);
+        
+        const activeCounts = await Project.aggregate([
+            { $group: { _id: '$isActive', count: { $sum: 1 } } }
         ]);
         
         const result = {
             ongoing: 0,
             completed: 0,
             awarded: 0,
-            total: 0
+            total: 0,
+            byCategory: {},
+            active: 0,
+            inactive: 0
         };
         
         counts.forEach(c => {
@@ -82,6 +116,17 @@ router.get('/counts', async (req, res) => {
                 result[c._id] = c.count;
                 result.total += c.count;
             }
+        });
+        
+        categoryCounts.forEach(c => {
+            if (c._id) {
+                result.byCategory[c._id] = c.count;
+            }
+        });
+        
+        activeCounts.forEach(c => {
+            if (c._id === true) result.active = c.count;
+            else if (c._id === false) result.inactive = c.count;
         });
         
         res.json(result);
@@ -117,24 +162,22 @@ router.get('/:identifier', async (req, res) => {
 router.post('/', authMiddleware, async (req, res) => {
     try {
         console.log('=== Creating new project ===');
-        console.log('Content-Type:', req.headers['content-type']);
-        console.log('Body type:', typeof req.body);
-        console.log('Body keys:', Object.keys(req.body || {}));
         console.log('Request body:', JSON.stringify(req.body, null, 2));
-        console.log('Raw title:', req.body?.title, 'Type:', typeof req.body?.title);
         
+        const { 
+            title, clientName, year, projectStatus, category, location, 
+            displayOrder, imageUrl, featuredImage, gallery, description,
+            scope, materials, isActive 
+        } = req.body;
         
-        const { title, clientName, year, status, location, displayOrder, imageUrl, description } = req.body;
-        
-        
-        if (!title || !clientName || !year) {
+        // Only title and year are required now
+        if (!title || !year) {
             console.log('Validation failed - missing required fields');
             return res.status(400).json({ 
-                message: 'Title, Client Name, and Year are required',
-                received: { title, clientName, year }
+                message: 'Title and Year are required',
+                received: { title, year }
             });
         }
-        
         
         const parsedYear = parseInt(year, 10);
         if (Number.isNaN(parsedYear)) {
@@ -145,20 +188,29 @@ router.post('/', authMiddleware, async (req, res) => {
         }
 
         const allowedStatuses = ['ongoing', 'completed', 'awarded'];
-        const normalizedStatus = (status && allowedStatuses.includes(status)) ? status : 'ongoing';
+        const normalizedStatus = (projectStatus && allowedStatuses.includes(projectStatus)) ? projectStatus : 'ongoing';
+
+        const allowedCategories = ['Residential', 'Commercial', 'Hospitality', 'Healthcare', 'Educational', 'Government', 'Retail', 'Other'];
+        const normalizedCategory = (category && allowedCategories.includes(category)) ? category : 'Commercial';
 
         const projectData = {
             title: String(title).trim(),
-            clientName: String(clientName).trim(),
+            clientName: clientName ? String(clientName).trim() : '',
             year: parsedYear,
-            status: normalizedStatus,
+            projectStatus: normalizedStatus,
+            category: normalizedCategory,
             location: location || '',
             displayOrder: (Number.isNaN(parseInt(displayOrder, 10)) ? 0 : parseInt(displayOrder, 10)),
             imageUrl: imageUrl || '',
-            description: description || ''
+            featuredImage: featuredImage || imageUrl || '',
+            gallery: Array.isArray(gallery) ? gallery : [],
+            description: description || '',
+            scope: scope || '',
+            materials: Array.isArray(materials) ? materials : [],
+            isActive: isActive !== undefined ? Boolean(isActive) : true
         };
         
-        
+        // Generate unique slug
         let baseSlug = projectData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
         let slug = baseSlug;
         let counter = 1;
@@ -170,7 +222,6 @@ router.post('/', authMiddleware, async (req, res) => {
         projectData.slug = slug;
         
         console.log('Final project data:', JSON.stringify(projectData, null, 2));
-        
         
         const project = new Project(projectData);
         const savedProject = await project.save();
@@ -184,7 +235,6 @@ router.post('/', authMiddleware, async (req, res) => {
         console.error('Error message:', err.message);
         console.error('Error stack:', err.stack);
         
-        
         if (err.code === 11000) {
             const field = Object.keys(err.keyPattern || {})[0] || 'field';
             return res.status(400).json({ 
@@ -192,7 +242,6 @@ router.post('/', authMiddleware, async (req, res) => {
                 error: err.message 
             });
         }
-        
         
         if (err.name === 'ValidationError') {
             const messages = Object.values(err.errors).map(e => e.message);
@@ -202,7 +251,6 @@ router.post('/', authMiddleware, async (req, res) => {
             });
         }
 
-        
         if (err.name === 'CastError') {
             return res.status(400).json({
                 message: `Invalid value for ${err.path}: ${err.value}`,
@@ -218,6 +266,41 @@ router.post('/', authMiddleware, async (req, res) => {
     }
 });
 
+
+// Upload gallery images endpoint
+router.post('/upload-gallery', authMiddleware, upload.array('images', 20), async (req, res) => {
+    try {
+        console.log('=== Uploading gallery images ===');
+        
+        if (!req.files || req.files.length === 0) {
+            return res.status(400).json({ message: 'No image files provided' });
+        }
+        
+        console.log(`Received ${req.files.length} files`);
+        
+        const uploadPromises = req.files.map(file => uploadToCloudinary(file.buffer, 'sabta/projects/gallery'));
+        const results = await Promise.all(uploadPromises);
+        
+        const images = results.map((result, index) => ({
+            url: result.secure_url,
+            publicId: result.public_id,
+            caption: '',
+            displayOrder: index
+        }));
+        
+        console.log(`✅ ${images.length} images uploaded to Cloudinary`);
+        
+        res.json({ images });
+        
+    } catch (err) {
+        console.error('=== GALLERY UPLOAD ERROR ===');
+        console.error('Error:', err.message);
+        res.status(500).json({ 
+            message: 'Failed to upload gallery images: ' + err.message,
+            error: err.message 
+        });
+    }
+});
 
 router.post('/upload-image', authMiddleware, upload.single('image'), async (req, res) => {
     try {
@@ -256,13 +339,17 @@ router.put('/:id', authMiddleware, async (req, res) => {
         console.log('Project ID:', req.params.id);
         console.log('Update data:', JSON.stringify(req.body, null, 2));
         
-        const { title, clientName, year, status, location, displayOrder, imageUrl, description } = req.body;
+        const { 
+            title, clientName, year, projectStatus, category, location, 
+            displayOrder, imageUrl, featuredImage, gallery, description,
+            scope, materials, isActive 
+        } = req.body;
         
         const updateData = {
             updatedAt: new Date()
         };
         
-        
+        // Handle all fields
         if (title !== undefined) updateData.title = String(title).trim();
         if (clientName !== undefined) updateData.clientName = String(clientName).trim();
         if (year !== undefined) {
@@ -275,12 +362,19 @@ router.put('/:id', authMiddleware, async (req, res) => {
             }
             updateData.year = parsedYear;
         }
-        if (status !== undefined) {
+        if (projectStatus !== undefined) {
             const allowedStatuses = ['ongoing', 'completed', 'awarded'];
-            if (!allowedStatuses.includes(status)) {
+            if (!allowedStatuses.includes(projectStatus)) {
                 return res.status(400).json({ message: 'Status must be one of ongoing, completed, awarded' });
             }
-            updateData.status = status;
+            updateData.projectStatus = projectStatus;
+        }
+        if (category !== undefined) {
+            const allowedCategories = ['Residential', 'Commercial', 'Hospitality', 'Healthcare', 'Educational', 'Government', 'Retail', 'Other'];
+            if (!allowedCategories.includes(category)) {
+                return res.status(400).json({ message: 'Invalid category' });
+            }
+            updateData.category = category;
         }
         if (location !== undefined) updateData.location = location;
         if (displayOrder !== undefined) {
@@ -288,9 +382,14 @@ router.put('/:id', authMiddleware, async (req, res) => {
             updateData.displayOrder = Number.isNaN(parsedOrder) ? 0 : parsedOrder;
         }
         if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
+        if (featuredImage !== undefined) updateData.featuredImage = featuredImage;
+        if (gallery !== undefined) updateData.gallery = Array.isArray(gallery) ? gallery : [];
         if (description !== undefined) updateData.description = description;
+        if (scope !== undefined) updateData.scope = scope;
+        if (materials !== undefined) updateData.materials = Array.isArray(materials) ? materials : [];
+        if (isActive !== undefined) updateData.isActive = Boolean(isActive);
         
-        
+        // Update slug if title changes
         if (updateData.title) {
             updateData.slug = updateData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
         }

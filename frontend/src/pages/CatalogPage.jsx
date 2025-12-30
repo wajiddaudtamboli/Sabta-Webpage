@@ -1,26 +1,43 @@
 import { useEffect, useState } from "react";
 import { IoCloseOutline } from "react-icons/io5";
+import { HiDocumentText, HiDownload, HiEye } from "react-icons/hi";
 import CatalogueBanner from "../assets/BannerImages/Quartz.jpeg";
+import { api } from "../api/api";
 
 const CatalogPage = () => {
-  useEffect(() => {
-  const handleEsc = (e) => {
-    if (e.key === "Escape") {
-      setShowForm(false);
-      setShowPdfViewer(false);
-    }
-  };
-
-  window.addEventListener("keydown", handleEsc);
-
-  return () => window.removeEventListener("keydown", handleEsc);
-}, []);
-
+  const [catalogues, setCatalogues] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [showPdfViewer, setShowPdfViewer] = useState(false);
-
   const [selectedFile, setSelectedFile] = useState("");
   const [pdfFile, setPdfFile] = useState("");
+
+  // Fetch catalogues from API
+  useEffect(() => {
+    const fetchCatalogues = async () => {
+      try {
+        const res = await api.get('/catalogues');
+        setCatalogues(res.data);
+      } catch (err) {
+        console.error('Error fetching catalogues:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCatalogues();
+  }, []);
+
+  // Handle ESC key
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key === "Escape") {
+        setShowForm(false);
+        setShowPdfViewer(false);
+      }
+    };
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, []);
 
   // VIEW PDF POPUP
   const handleView = (file) => {
@@ -64,62 +81,58 @@ const CatalogPage = () => {
       </section>
 
       {/* ========================= GRID ========================= */}
-      <div data-aos="fade-up" className="px-6 md:px-16 lg:px-32 py-20 grid grid-cols-1 md:grid-cols-2 gap-12">
-
-        {/* ---------- CATALOG 1 ---------- */}
-        <div className="rounded-xl border shadow-md p-5 space-y-4">
-          <img
-            src="/catalogues/New_Engineered_Marble.jpeg"
-            alt="Engineered Stone Catalogue"
-            className="w-full object-cover rounded-lg"
-          />
-
-          <h3 className="text-xl font-semibold">Engineered Stone</h3>
-
-          <div className="flex gap-6">
-            <button
-              onClick={() => handleView("/catalogues/Engineered_Stone.pdf")}
-              className="underline"
-            >
-              View Online
-            </button>
-
-            <button
-              onClick={() => handleDownloadClick("/catalogues/Engineered_Stone.pdf")}
-              className="border px-4 py-2 rounded-lg hover:opacity-80"
-            >
-              Download
-            </button>
+      <div data-aos="fade-up" className="px-6 md:px-16 lg:px-32 py-20">
+        {loading ? (
+          <div className="text-center py-12">
+            <div className="animate-spin w-8 h-8 border-4 border-[#d4a853] border-t-transparent rounded-full mx-auto mb-4"></div>
+            <p className="text-gray-400">Loading catalogues...</p>
           </div>
-        </div>
-
-        {/* ---------- CATALOG 2 ---------- */}
-        <div className="rounded-xl border shadow-md p-5 space-y-4">
-          <img
-            src="/catalogues/New_Natural_Stone.jpeg"
-            alt="Natural Stone Catalogue"
-            className="w-full object-cover rounded-lg"
-          />
-
-          <h3 className="text-xl font-semibold">Natural Stone</h3>
-
-          <div className="flex gap-6">
-            <button
-              onClick={() => handleView("/catalogues/Engineered_Stone.pdf")}
-              className="underline"
-            >
-              View Online
-            </button>
-
-            <button
-              onClick={() => handleDownloadClick("/catalogues/Engineered_Stone.pdf")}
-              className="border px-4 py-2 rounded-lg hover:opacity-80"
-            >
-              Download
-            </button>
+        ) : catalogues.length === 0 ? (
+          <div className="text-center py-12">
+            <HiDocumentText className="w-16 h-16 text-[#d4a853] mx-auto mb-4" />
+            <p className="text-gray-400 text-lg">Catalogues will be available soon.</p>
           </div>
-        </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+            {catalogues.map((catalogue) => (
+              <div key={catalogue._id} className="rounded-xl border shadow-md p-5 space-y-4">
+                {catalogue.thumbnailUrl ? (
+                  <img
+                    src={catalogue.thumbnailUrl}
+                    alt={catalogue.title}
+                    className="w-full object-cover rounded-lg"
+                    onError={(e) => { e.target.src = 'https://placehold.co/600x400?text=Catalogue'; }}
+                  />
+                ) : (
+                  <div className="w-full h-48 bg-gray-800 rounded-lg flex items-center justify-center">
+                    <HiDocumentText className="w-16 h-16 text-[#d4a853]" />
+                  </div>
+                )}
 
+                <h3 className="text-xl font-semibold">{catalogue.title}</h3>
+                {catalogue.description && (
+                  <p className="text-gray-400 text-sm">{catalogue.description}</p>
+                )}
+
+                <div className="flex gap-6">
+                  <button
+                    onClick={() => handleView(catalogue.fileUrl)}
+                    className="underline flex items-center gap-1 hover:text-[#d4a853] transition"
+                  >
+                    <HiEye className="w-4 h-4" /> View Online
+                  </button>
+
+                  <button
+                    onClick={() => handleDownloadClick(catalogue.fileUrl)}
+                    className="border px-4 py-2 rounded-lg hover:opacity-80 flex items-center gap-1"
+                  >
+                    <HiDownload className="w-4 h-4" /> Download
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* ========================= PDF VIEWER POPUP ========================= */}

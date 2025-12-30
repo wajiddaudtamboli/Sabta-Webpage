@@ -127,10 +127,6 @@ const Settings = () => {
 
     return (
         <div className="p-4 md:p-6 text-white min-h-screen">
-            {/* Hidden file inputs */}
-            <input type="file" ref={logoInputRef} onChange={(e) => handleImageUpload(e, 'logo')} accept="image/*" className="hidden" />
-            <input type="file" ref={qrInputRef} onChange={(e) => handleImageUpload(e, 'qr')} accept="image/*" className="hidden" />
-            
             {loading && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                     <div className="bg-[#1a1a1a] p-6 rounded-lg">
@@ -178,7 +174,7 @@ const Settings = () => {
                     {activeTab === 'logo' && (
                         <div>
                             <h2 className="text-xl font-semibold mb-6 text-[#d4a853]">Logo Management</h2>
-                            <p className="text-gray-300 mb-6">Upload your site logo. This will appear in the header, footer, and admin panel.</p>
+                            <p className="text-gray-300 mb-6">Enter your site logo URL. This will appear in the header, footer, and admin panel.</p>
                             
                             <div className="flex flex-col md:flex-row items-start gap-6">
                                 <div className="bg-[#1a1a1a] p-4 rounded">
@@ -191,16 +187,8 @@ const Settings = () => {
                                 </div>
                                 
                                 <div className="flex-1">
-                                    <button
-                                        onClick={() => logoInputRef.current?.click()}
-                                        className="bg-[#3a3a3a] text-white px-4 py-2 rounded hover:bg-[#4a4a4a] transition cursor-pointer mb-4 flex items-center gap-2"
-                                        title="Upload New Logo"
-                                    >
-                                        <HiUpload className="w-4 h-4" /> Upload New Logo
-                                    </button>
-                                    
                                     <div className="mb-4">
-                                        <label className="block text-gray-300 text-sm mb-2">Or enter logo URL</label>
+                                        <label className="block text-gray-300 text-sm mb-2">Enter logo URL</label>
                                         <input
                                             type="text"
                                             value={logo.url || ''}
@@ -247,19 +235,12 @@ const Settings = () => {
                                         className="w-24 h-24 object-contain rounded border border-gray-600"
                                     />
                                     <div className="flex-1">
-                                        <button
-                                            onClick={() => qrInputRef.current?.click()}
-                                            className="bg-[#3a3a3a] text-white px-4 py-2 rounded hover:bg-[#4a4a4a] transition cursor-pointer mb-2 flex items-center gap-2"
-                                            title="Upload New QR"
-                                        >
-                                            <HiUpload className="w-4 h-4" /> Upload New QR
-                                        </button>
                                         <input
                                             type="text"
                                             value={footer.qrCode || ''}
                                             onChange={(e) => setFooter({ ...footer, qrCode: e.target.value })}
                                             className="w-full p-2 bg-[#1a1a1a] border border-gray-600 rounded text-white text-sm focus:border-[#d4a853] focus:outline-none"
-                                            placeholder="Or paste QR image URL"
+                                            placeholder="Paste QR image URL"
                                         />
                                     </div>
                                 </div>

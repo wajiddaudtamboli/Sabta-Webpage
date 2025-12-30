@@ -190,7 +190,7 @@ const Home = () => {
           absolute inset-0
           transition-transform duration-700 ease-out
           group-hover:scale-110
-          group-hover:translate-z-[-40px]
+          group-hover:-translate-z-10
           transform-gpu
         "
                   >
@@ -202,7 +202,7 @@ const Home = () => {
                   </div>
 
                   {/* OVERLAY */}
-                  <div className="absolute inset-0 bg-gradient-to-b from-black/60 to-transparent"></div>
+                  <div className="absolute inset-0 bg-linear-to-b from-black/60 to-transparent"></div>
 
                   {/* TEXT LAYER (moves more for parallax) */}
                   <div
@@ -350,45 +350,113 @@ const Home = () => {
           </div>
         </div>
       </section>
-      <section
-        data-aos="fade-up"
-        className="w-full px-6 md:px-12 lg:px-20 py-16"
-      >
-        <div
-          className="
-      w-full
-      h-[40vh]
-      sm:h-[50vh]
-      md:h-[60vh]
-      lg:h-[70vh]
-      xl:h-[80vh]
-      rounded-xl
-      overflow-hidden
-      border border-(--brand-accent)/40
-      shadow-lg
-    "
+      
+      {/* ✅ VIDEO SECTION - Dynamic from Admin */}
+      {content.videoSection?.enabled !== false && (
+        <section
+          data-aos="fade-up"
+          className="w-full px-6 md:px-12 lg:px-20 py-16"
         >
-          <video
-            ref={videoRef}
-            src="/Sabta_Video.mp4"
-            className="w-full h-full object-cover"
-            controls
-            controlsList="nodownload noplaybackrate"
-            disablePictureInPicture
-            onContextMenu={(e) => e.preventDefault()}
+          {(content.videoSection?.title || content.videoSection?.description) && (
+            <div className="text-center mb-8">
+              {content.videoSection?.title && (
+                <h2 className="text-2xl sm:text-4xl font-bold mb-4">{content.videoSection.title}</h2>
+              )}
+              {content.videoSection?.description && (
+                <p className="text-gray-400 max-w-2xl mx-auto">{content.videoSection.description}</p>
+              )}
+            </div>
+          )}
+          <div
+            className="
+        w-full
+        h-[40vh]
+        sm:h-[50vh]
+        md:h-[60vh]
+        lg:h-[70vh]
+        xl:h-[80vh]
+        rounded-xl
+        overflow-hidden
+        border border-(--brand-accent)/40
+        shadow-lg
+      "
+          >
+            {content.videoSection?.videoUrl?.includes('youtube.com') || content.videoSection?.videoUrl?.includes('vimeo.com') ? (
+              <iframe
+                src={content.videoSection.videoUrl}
+                className="w-full h-full"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                title="Video"
+              />
+            ) : (
+              <video
+                ref={videoRef}
+                src={content.videoSection?.videoUrl || "/Sabta_Video.mp4"}
+                className="w-full h-full object-cover"
+                controls
+                controlsList="nodownload noplaybackrate"
+                disablePictureInPicture
+                onContextMenu={(e) => e.preventDefault()}
+                poster={content.videoSection?.thumbnailUrl}
+              />
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* ✅ ADDITIONAL BANNER SECTION - Dynamic from Admin */}
+      {content.additionalBanner?.enabled && (
+        <section
+          data-aos="fade-up"
+          className="w-full px-6 md:px-12 lg:px-20 py-16"
+        >
+          <div
+            className="relative w-full h-[50vh] rounded-xl overflow-hidden bg-cover bg-center flex items-center justify-center"
+            style={{ backgroundImage: `url(${content.additionalBanner.image || MainImage})` }}
+          >
+            <div className="absolute inset-0 bg-black/60"></div>
+            <div className="relative z-10 text-center text-white px-4">
+              {content.additionalBanner.heading && (
+                <h2 className="text-3xl sm:text-5xl font-bold mb-4">{content.additionalBanner.heading}</h2>
+              )}
+              {content.additionalBanner.subtext && (
+                <p className="text-lg sm:text-xl mb-6 max-w-2xl mx-auto">{content.additionalBanner.subtext}</p>
+              )}
+              {content.additionalBanner.buttonText && (
+                <Link
+                  to={content.additionalBanner.buttonLink || '/contact'}
+                  className="inline-block px-8 py-3 bg-[#d4a853] text-black font-semibold rounded hover:bg-[#c49743] transition"
+                >
+                  {content.additionalBanner.buttonText}
+                </Link>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ✅ GIF SECTION - Dynamic from Admin */}
+      {content.gifSection?.enabled !== false && (
+        <section data-aos="fade-up" className="w-full px-6 md:px-12 lg:px-20 py-16">
+          {(content.gifSection?.title || content.gifSection?.description) && (
+            <div className="text-center mb-8">
+              {content.gifSection?.title && (
+                <h2 className="text-2xl sm:text-4xl font-bold mb-4">{content.gifSection.title}</h2>
+              )}
+              {content.gifSection?.description && (
+                <p className="text-gray-400 max-w-2xl mx-auto">{content.gifSection.description}</p>
+              )}
+            </div>
+          )}
+          <img
+            src={content.gifSection?.gifUrl || gif}
+            alt="Sabta GIF"
+            className="w-full aspect-video rounded-xl overflow-hidden border border-(--brand-accent)/40 shadow-lg object-cover"
           />
-        </div>
-      </section>
-
-
-      {/* ✅ GIF SECTION */}
-      <section data-aos="fade-up" className="w-full px-6 md:px-12 lg:px-20 py-16">
-        <img
-          src={gif}
-          alt="Sabta GIF"
-          className="w-full aspect-video rounded-xl overflow-hidden border border-(--brand-accent)/40 shadow-lg"
-        />
-      </section>
+        </section>
+      )}
 
       <section className="w-full px-4 sm:px-6 md:px-12 lg:px-20 py-16">
         <ExperienceSection />

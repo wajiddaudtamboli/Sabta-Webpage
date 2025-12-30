@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { api } from '../api/api';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaCalendarAlt, FaChevronLeft, FaChevronRight, FaBuilding, FaMapMarkerAlt } from 'react-icons/fa';
+import { FaCalendarAlt, FaChevronLeft, FaChevronRight, FaBuilding, FaMapMarkerAlt, FaTag } from 'react-icons/fa';
 
 const Projects = () => {
     const [projects, setProjects] = useState([]);
     const [selectedTab, setSelectedTab] = useState('all');
+    const [selectedCategory, setSelectedCategory] = useState('all');
     const [loading, setLoading] = useState(true);
-    const [counts, setCounts] = useState({ ongoing: 0, completed: 0, awarded: 0, total: 0 });
+    const [counts, setCounts] = useState({ ongoing: 0, completed: 0, awarded: 0, total: 0, byCategory: {} });
     const [showModal, setShowModal] = useState(false);
     const [formData, setFormData] = useState({ name: '', email: '', phone: '', company: '', message: '' });
     const [submitting, setSubmitting] = useState(false);
@@ -23,6 +24,18 @@ const Projects = () => {
         { id: 'ongoing', label: 'ONGOING' },
         { id: 'completed', label: 'COMPLETED' },
         { id: 'awarded', label: 'AWARDED' }
+    ];
+
+    const categoryOptions = [
+        { value: 'all', label: 'All Categories' },
+        { value: 'Residential', label: 'Residential' },
+        { value: 'Commercial', label: 'Commercial' },
+        { value: 'Hospitality', label: 'Hospitality' },
+        { value: 'Healthcare', label: 'Healthcare' },
+        { value: 'Educational', label: 'Educational' },
+        { value: 'Government', label: 'Government' },
+        { value: 'Retail', label: 'Retail' },
+        { value: 'Other', label: 'Other' }
     ];
 
     useEffect(() => {
@@ -54,11 +67,15 @@ const Projects = () => {
         }
     };
 
-    const fetchByStatus = async (status) => {
+    const fetchByStatus = async (status, category = selectedCategory) => {
         setLoading(true);
         setCurrentSlide(0); 
         try {
-            const url = status === 'all' ? '/projects' : `/projects?status=${status}`;
+            let url = '/projects';
+            const params = [];
+            if (status !== 'all') params.push(`status=${status}`);
+            if (category !== 'all') params.push(`category=${category}`);
+            if (params.length > 0) url += '?' + params.join('&');
             const res = await api.get(url);
             setProjects(res.data);
         } catch (error) {
@@ -70,7 +87,12 @@ const Projects = () => {
 
     const handleTabChange = (tabId) => {
         setSelectedTab(tabId);
-        fetchByStatus(tabId);
+        fetchByStatus(tabId, selectedCategory);
+    };
+
+    const handleCategoryChange = (category) => {
+        setSelectedCategory(category);
+        fetchByStatus(selectedTab, category);
     };
 
     const handleFormChange = (e) => {
@@ -190,8 +212,8 @@ const Projects = () => {
                         >
                             <div className="space-y-4">
                                 <div className="aspect-square rounded-2xl overflow-hidden bg-[#1a1a1a]">
-                                    {projects[0]?.imageUrl ? (
-                                        <img src={projects[0].imageUrl} alt="" className="w-full h-full object-cover" />
+                                    {(projects[0]?.featuredImage || projects[0]?.imageUrl) ? (
+                                        <img src={projects[0].featuredImage || projects[0].imageUrl} alt="" className="w-full h-full object-cover" />
                                     ) : (
                                         <div className="w-full h-full bg-linear-to-br from-[#d4a853]/20 to-[#1a1a1a] flex items-center justify-center">
                                             <FaBuilding className="text-4xl text-[#d4a853]/30" />
@@ -199,8 +221,8 @@ const Projects = () => {
                                     )}
                                 </div>
                                 <div className="aspect-4/3 rounded-2xl overflow-hidden bg-[#1a1a1a]">
-                                    {projects[1]?.imageUrl ? (
-                                        <img src={projects[1].imageUrl} alt="" className="w-full h-full object-cover" />
+                                    {(projects[1]?.featuredImage || projects[1]?.imageUrl) ? (
+                                        <img src={projects[1].featuredImage || projects[1].imageUrl} alt="" className="w-full h-full object-cover" />
                                     ) : (
                                         <div className="w-full h-full bg-linear-to-br from-[#d4a853]/10 to-[#1a1a1a] flex items-center justify-center">
                                             <FaBuilding className="text-3xl text-[#d4a853]/20" />
@@ -210,8 +232,8 @@ const Projects = () => {
                             </div>
                             <div className="space-y-4 pt-8">
                                 <div className="aspect-4/3 rounded-2xl overflow-hidden bg-[#1a1a1a]">
-                                    {projects[2]?.imageUrl ? (
-                                        <img src={projects[2].imageUrl} alt="" className="w-full h-full object-cover" />
+                                    {(projects[2]?.featuredImage || projects[2]?.imageUrl) ? (
+                                        <img src={projects[2].featuredImage || projects[2].imageUrl} alt="" className="w-full h-full object-cover" />
                                     ) : (
                                         <div className="w-full h-full bg-linear-to-br from-[#1a1a1a] to-[#d4a853]/10 flex items-center justify-center">
                                             <FaBuilding className="text-3xl text-[#d4a853]/20" />
@@ -219,8 +241,8 @@ const Projects = () => {
                                     )}
                                 </div>
                                 <div className="aspect-square rounded-2xl overflow-hidden bg-[#1a1a1a]">
-                                    {projects[3]?.imageUrl ? (
-                                        <img src={projects[3].imageUrl} alt="" className="w-full h-full object-cover" />
+                                    {(projects[3]?.featuredImage || projects[3]?.imageUrl) ? (
+                                        <img src={projects[3].featuredImage || projects[3].imageUrl} alt="" className="w-full h-full object-cover" />
                                     ) : (
                                         <div className="w-full h-full bg-linear-to-br from-[#1a1a1a] to-[#d4a853]/20 flex items-center justify-center">
                                             <FaBuilding className="text-4xl text-[#d4a853]/30" />
@@ -257,6 +279,34 @@ const Projects = () => {
                                 {tab.label}
                                 {tab.id !== 'all' && (
                                     <span className="ml-2 opacity-70">({counts[tab.id] || 0})</span>
+                                )}
+                            </button>
+                        ))}
+                    </motion.div>
+
+                    {/* Category Filter */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: 0.1 }}
+                        className="flex flex-wrap justify-center gap-2 mt-6"
+                    >
+                        {categoryOptions.map((cat) => (
+                            <button
+                                key={cat.value}
+                                onClick={() => handleCategoryChange(cat.value)}
+                                className={`
+                                    px-4 py-2 rounded-lg text-xs font-medium tracking-wider transition-all duration-300 cursor-pointer flex items-center gap-1
+                                    ${selectedCategory === cat.value 
+                                        ? 'bg-[#2a2a2a] text-[#d4a853] border border-[#d4a853]/50' 
+                                        : 'bg-[#0f0f0f] text-gray-500 hover:bg-[#1a1a1a] hover:text-gray-300 border border-gray-800/50'
+                                    }
+                                `}
+                            >
+                                <FaTag className="text-[10px]" />
+                                {cat.label}
+                                {cat.value !== 'all' && counts.byCategory?.[cat.value] && (
+                                    <span className="opacity-70">({counts.byCategory[cat.value]})</span>
                                 )}
                             </button>
                         ))}

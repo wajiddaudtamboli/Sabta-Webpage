@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { api } from '../../api/api';
+import { HiPlus, HiTrash, HiPhotograph, HiVideoCamera, HiEye, HiEyeOff, HiChevronUp, HiChevronDown } from 'react-icons/hi';
 
 // SVG Icons
 const HomeIcon = () => (
@@ -25,7 +26,10 @@ const Pages = () => {
     const [pageData, setPageData] = useState(null);
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [uploading, setUploading] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
+    const fileInputRef = useRef(null);
+    const [uploadTarget, setUploadTarget] = useState({ type: '', index: -1 });
 
     const pages = [
         { id: 'home', name: 'Home Page', icon: <HomeIcon /> },
@@ -37,13 +41,45 @@ const Pages = () => {
     const defaultContent = {
         home: {
             heroSlides: [
-                { heading: "Where Nature's Beauty Meets Expert Craftsmanship", subtext: "Premium stone solutions", image: "", button: "Get Started" },
-                { heading: "Premium Marble and Stone Designed to Elevate Your Interiors", subtext: "Solutions tailored for your brand", image: "", button: "View Services" },
-                { heading: "Classic Design and Enduring Strength for Modern Spaces", subtext: "Delivering quality, speed & results", image: "", button: "Contact Us" }
+                { 
+                    heading: "Where Nature's Beauty Meets Expert Craftsmanship", 
+                    subtext: "Premium stone solutions", 
+                    image: "", 
+                    videoUrl: "",
+                    gifUrl: "",
+                    mediaType: "image", // image, video, gif
+                    button: "Get Started",
+                    buttonLink: "/collections",
+                    isActive: true
+                }
             ],
             introTitle: "Why Sabta Granite Is the UAE's Trusted Choice for Premium Marble and Natural Stone",
             introText: "Marble brings a sense of luxury, elegance and lasting beauty to any space. At Sabta Granite, we supply a wide range of natural and engineered surfaces to projects across the UAE.",
-            introImage: ""
+            introImage: "",
+            // Video Section
+            videoSection: {
+                enabled: false,
+                title: "Watch Our Story",
+                description: "Discover how we craft premium stone solutions",
+                videoUrl: "",
+                thumbnailUrl: ""
+            },
+            // Additional Banner Section
+            additionalBanner: {
+                enabled: false,
+                heading: "",
+                subtext: "",
+                image: "",
+                buttonText: "",
+                buttonLink: ""
+            },
+            // GIF/Animation Section
+            gifSection: {
+                enabled: false,
+                title: "",
+                gifUrl: "",
+                description: ""
+            }
         },
         about: {
             title: "About Us",
@@ -113,6 +149,119 @@ const Pages = () => {
         const newSlides = [...(pageData.content.heroSlides || [])];
         newSlides[index] = { ...newSlides[index], [field]: value };
         handleContentChange('heroSlides', newSlides);
+    };
+
+    // Add new slide
+    const addSlide = () => {
+        const newSlide = {
+            heading: "New Slide Heading",
+            subtext: "Enter subtext here",
+            image: "",
+            videoUrl: "",
+            gifUrl: "",
+            mediaType: "image",
+            button: "Learn More",
+            buttonLink: "/",
+            isActive: true
+        };
+        const newSlides = [...(pageData.content.heroSlides || []), newSlide];
+        handleContentChange('heroSlides', newSlides);
+    };
+
+    // Remove slide
+    const removeSlide = (index) => {
+        if ((pageData.content.heroSlides || []).length <= 1) {
+            setMessage({ type: 'error', text: 'You must have at least one slide' });
+            setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+            return;
+        }
+        const newSlides = pageData.content.heroSlides.filter((_, i) => i !== index);
+        handleContentChange('heroSlides', newSlides);
+    };
+
+    // Move slide up/down
+    const moveSlide = (index, direction) => {
+        const newSlides = [...(pageData.content.heroSlides || [])];
+        const newIndex = direction === 'up' ? index - 1 : index + 1;
+        if (newIndex < 0 || newIndex >= newSlides.length) return;
+        [newSlides[index], newSlides[newIndex]] = [newSlides[newIndex], newSlides[index]];
+        handleContentChange('heroSlides', newSlides);
+    };
+
+    // Handle section toggle
+    const handleSectionToggle = (sectionKey, enabled) => {
+        setPageData({
+            ...pageData,
+            content: {
+                ...pageData.content,
+                [sectionKey]: {
+                    ...pageData.content[sectionKey],
+                    enabled
+                }
+            }
+        });
+    };
+
+    // Handle section field change
+    const handleSectionFieldChange = (sectionKey, field, value) => {
+        setPageData({
+            ...pageData,
+            content: {
+                ...pageData.content,
+                [sectionKey]: {
+                    ...pageData.content[sectionKey],
+                    [field]: value
+                }
+            }
+        });
+    };
+
+    // Handle file upload
+    const handleFileUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        setUploading(true);
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const response = await api.post('/media/upload', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            const url = response.data.url;
+
+            // Apply to the correct target
+            if (uploadTarget.type === 'slide-image') {
+                handleSlideChange(uploadTarget.index, 'image', url);
+            } else if (uploadTarget.type === 'slide-video') {
+                handleSlideChange(uploadTarget.index, 'videoUrl', url);
+            } else if (uploadTarget.type === 'slide-gif') {
+                handleSlideChange(uploadTarget.index, 'gifUrl', url);
+            } else if (uploadTarget.type === 'intro-image') {
+                handleContentChange('introImage', url);
+            } else if (uploadTarget.type === 'video-section-thumb') {
+                handleSectionFieldChange('videoSection', 'thumbnailUrl', url);
+            } else if (uploadTarget.type === 'additional-banner') {
+                handleSectionFieldChange('additionalBanner', 'image', url);
+            } else if (uploadTarget.type === 'gif-section') {
+                handleSectionFieldChange('gifSection', 'gifUrl', url);
+            }
+
+            setMessage({ type: 'success', text: 'File uploaded successfully!' });
+            setTimeout(() => setMessage({ type: '', text: '' }), 2000);
+        } catch (error) {
+            console.error('Upload error:', error);
+            setMessage({ type: 'error', text: 'Failed to upload file' });
+        } finally {
+            setUploading(false);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+    };
+
+    const triggerUpload = (type, index = -1) => {
+        setUploadTarget({ type, index });
+        fileInputRef.current?.click();
     };
 
     const InputField = ({ label, value, onChange, type = 'text', placeholder = '' }) => (
@@ -194,30 +343,115 @@ const Pages = () => {
                                     <>
                                         {/* Hero Slides Section */}
                                         <div className="mb-8">
-                                            <h3 className="text-lg font-semibold text-white mb-4 border-b border-gray-700 pb-2">
-                                                Hero Banner Slides
-                                            </h3>
+                                            <div className="flex justify-between items-center mb-4 border-b border-gray-700 pb-2">
+                                                <h3 className="text-lg font-semibold text-white">
+                                                    Hero Banner Slides ({(pageData.content.heroSlides || []).length})
+                                                </h3>
+                                                <button
+                                                    type="button"
+                                                    onClick={addSlide}
+                                                    className="px-4 py-2 bg-[#d4a853] text-black rounded hover:bg-[#c49743] transition cursor-pointer flex items-center gap-2 text-sm font-medium"
+                                                >
+                                                    <HiPlus className="w-4 h-4" /> Add Slide
+                                                </button>
+                                            </div>
+                                            
                                             {(pageData.content.heroSlides || defaultContent.home.heroSlides).map((slide, index) => (
-                                                <div key={index} className="bg-[#1a1a1a] p-4 rounded mb-4 border border-gray-700">
-                                                    <h4 className="text-[#d4a853] mb-3">Slide {index + 1}</h4>
-                                                    <InputField
-                                                        label="Heading"
-                                                        value={slide.heading}
-                                                        onChange={(e) => handleSlideChange(index, 'heading', e.target.value)}
-                                                        placeholder="Enter slide heading..."
-                                                    />
-                                                    <InputField
-                                                        label="Subtext"
-                                                        value={slide.subtext}
-                                                        onChange={(e) => handleSlideChange(index, 'subtext', e.target.value)}
-                                                        placeholder="Enter subtext..."
-                                                    />
-                                                    <InputField
-                                                        label="Background Image URL (optional - leave empty for default)"
-                                                        value={slide.image}
-                                                        onChange={(e) => handleSlideChange(index, 'image', e.target.value)}
-                                                        placeholder="https://... (Cloudinary URL recommended)"
-                                                    />
+                                                <div key={index} className={`bg-[#1a1a1a] p-4 rounded mb-4 border ${slide.isActive !== false ? 'border-gray-700' : 'border-red-800 opacity-60'}`}>
+                                                    <div className="flex justify-between items-center mb-3">
+                                                        <div className="flex items-center gap-3">
+                                                            <h4 className="text-[#d4a853] font-medium">Slide {index + 1}</h4>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleSlideChange(index, 'isActive', slide.isActive === false ? true : false)}
+                                                                className={`px-2 py-1 text-xs rounded cursor-pointer flex items-center gap-1 ${
+                                                                    slide.isActive !== false 
+                                                                        ? 'bg-green-900/50 text-green-400 border border-green-600' 
+                                                                        : 'bg-red-900/50 text-red-400 border border-red-600'
+                                                                }`}
+                                                            >
+                                                                {slide.isActive !== false ? <><HiEye className="w-3 h-3" /> Active</> : <><HiEyeOff className="w-3 h-3" /> Hidden</>}
+                                                            </button>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => moveSlide(index, 'up')}
+                                                                disabled={index === 0}
+                                                                className="p-1 text-gray-400 hover:text-white disabled:opacity-30 cursor-pointer"
+                                                            >
+                                                                <HiChevronUp className="w-5 h-5" />
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => moveSlide(index, 'down')}
+                                                                disabled={index === (pageData.content.heroSlides || []).length - 1}
+                                                                className="p-1 text-gray-400 hover:text-white disabled:opacity-30 cursor-pointer"
+                                                            >
+                                                                <HiChevronDown className="w-5 h-5" />
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => removeSlide(index)}
+                                                                className="p-1 text-red-400 hover:text-red-300 cursor-pointer"
+                                                                title="Remove slide"
+                                                            >
+                                                                <HiTrash className="w-5 h-5" />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                        <InputField
+                                                            label="Heading"
+                                                            value={slide.heading}
+                                                            onChange={(e) => handleSlideChange(index, 'heading', e.target.value)}
+                                                            placeholder="Enter slide heading..."
+                                                        />
+                                                        <InputField
+                                                            label="Subtext"
+                                                            value={slide.subtext}
+                                                            onChange={(e) => handleSlideChange(index, 'subtext', e.target.value)}
+                                                            placeholder="Enter subtext..."
+                                                        />
+                                                    </div>
+
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                        <InputField
+                                                            label="Button Text"
+                                                            value={slide.button}
+                                                            onChange={(e) => handleSlideChange(index, 'button', e.target.value)}
+                                                            placeholder="Get Started"
+                                                        />
+                                                        <InputField
+                                                            label="Button Link"
+                                                            value={slide.buttonLink}
+                                                            onChange={(e) => handleSlideChange(index, 'buttonLink', e.target.value)}
+                                                            placeholder="/collections"
+                                                        />
+                                                    </div>
+
+                                                    {/* Media URL Field */}
+                                                    <div className="mb-4">
+                                                        <InputField
+                                                            label="Image URL"
+                                                            value={slide.image}
+                                                            onChange={(e) => handleSlideChange(index, 'image', e.target.value)}
+                                                            placeholder="Enter image URL..."
+                                                        />
+                                                    </div>
+
+                                                    {/* Preview */}
+                                                    {slide.image && (
+                                                        <div className="mt-2">
+                                                            <p className="text-gray-500 text-xs mb-1">Preview:</p>
+                                                            <img 
+                                                                src={slide.image} 
+                                                                alt="Preview" 
+                                                                className="w-32 h-20 object-cover rounded" 
+                                                            />
+                                                        </div>
+                                                    )}
                                                 </div>
                                             ))}
                                         </div>
@@ -240,12 +474,193 @@ const Pages = () => {
                                                 rows={5}
                                                 placeholder="Enter introduction paragraph..."
                                             />
-                                            <InputField
-                                                label="Introduction Image URL"
-                                                value={pageData.content.introImage}
-                                                onChange={(e) => handleContentChange('introImage', e.target.value)}
-                                                placeholder="https://... (Cloudinary URL)"
-                                            />
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                                                <InputField
+                                                    label="Introduction Image URL"
+                                                    value={pageData.content.introImage}
+                                                    onChange={(e) => handleContentChange('introImage', e.target.value)}
+                                                    placeholder="https://... (Cloudinary URL)"
+                                                />
+                                                <div className="mb-4 flex gap-2">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => triggerUpload('intro-image')}
+                                                        disabled={uploading}
+                                                        className="px-4 py-3 bg-[#2a2a2a] border border-gray-600 rounded text-gray-300 hover:bg-[#3a3a3a] cursor-pointer text-sm"
+                                                    >
+                                                        Upload Image
+                                                    </button>
+                                                    {pageData.content.introImage && (
+                                                        <img src={pageData.content.introImage} alt="Preview" className="w-12 h-12 object-cover rounded" />
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Video Section */}
+                                        <div className="mb-8">
+                                            <div className="flex justify-between items-center mb-4 border-b border-gray-700 pb-2">
+                                                <h3 className="text-lg font-semibold text-white">Video Section</h3>
+                                                <label className="flex items-center gap-2 cursor-pointer">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={pageData.content.videoSection?.enabled || false}
+                                                        onChange={(e) => handleSectionToggle('videoSection', e.target.checked)}
+                                                        className="w-5 h-5 accent-[#d4a853]"
+                                                    />
+                                                    <span className="text-sm text-gray-400">Enable Section</span>
+                                                </label>
+                                            </div>
+                                            {pageData.content.videoSection?.enabled && (
+                                                <div className="bg-[#1a1a1a] p-4 rounded border border-gray-700">
+                                                    <InputField
+                                                        label="Section Title"
+                                                        value={pageData.content.videoSection?.title || ''}
+                                                        onChange={(e) => handleSectionFieldChange('videoSection', 'title', e.target.value)}
+                                                        placeholder="Watch Our Story"
+                                                    />
+                                                    <TextAreaField
+                                                        label="Description"
+                                                        value={pageData.content.videoSection?.description || ''}
+                                                        onChange={(e) => handleSectionFieldChange('videoSection', 'description', e.target.value)}
+                                                        rows={2}
+                                                    />
+                                                    <InputField
+                                                        label="Video URL (YouTube/Vimeo embed or direct URL)"
+                                                        value={pageData.content.videoSection?.videoUrl || ''}
+                                                        onChange={(e) => handleSectionFieldChange('videoSection', 'videoUrl', e.target.value)}
+                                                        placeholder="https://www.youtube.com/embed/..."
+                                                    />
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                                                        <InputField
+                                                            label="Thumbnail Image URL"
+                                                            value={pageData.content.videoSection?.thumbnailUrl || ''}
+                                                            onChange={(e) => handleSectionFieldChange('videoSection', 'thumbnailUrl', e.target.value)}
+                                                        />
+                                                        <div className="mb-4">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => triggerUpload('video-section-thumb')}
+                                                                className="px-4 py-3 bg-[#2a2a2a] border border-gray-600 rounded text-gray-300 hover:bg-[#3a3a3a] cursor-pointer text-sm"
+                                                            >
+                                                                Upload Thumbnail
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* GIF/Animation Section */}
+                                        <div className="mb-8">
+                                            <div className="flex justify-between items-center mb-4 border-b border-gray-700 pb-2">
+                                                <h3 className="text-lg font-semibold text-white">GIF/Animation Section</h3>
+                                                <label className="flex items-center gap-2 cursor-pointer">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={pageData.content.gifSection?.enabled || false}
+                                                        onChange={(e) => handleSectionToggle('gifSection', e.target.checked)}
+                                                        className="w-5 h-5 accent-[#d4a853]"
+                                                    />
+                                                    <span className="text-sm text-gray-400">Enable Section</span>
+                                                </label>
+                                            </div>
+                                            {pageData.content.gifSection?.enabled && (
+                                                <div className="bg-[#1a1a1a] p-4 rounded border border-gray-700">
+                                                    <InputField
+                                                        label="Section Title"
+                                                        value={pageData.content.gifSection?.title || ''}
+                                                        onChange={(e) => handleSectionFieldChange('gifSection', 'title', e.target.value)}
+                                                    />
+                                                    <TextAreaField
+                                                        label="Description"
+                                                        value={pageData.content.gifSection?.description || ''}
+                                                        onChange={(e) => handleSectionFieldChange('gifSection', 'description', e.target.value)}
+                                                        rows={2}
+                                                    />
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                                                        <InputField
+                                                            label="GIF Image URL"
+                                                            value={pageData.content.gifSection?.gifUrl || ''}
+                                                            onChange={(e) => handleSectionFieldChange('gifSection', 'gifUrl', e.target.value)}
+                                                        />
+                                                        <div className="mb-4 flex gap-2">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => triggerUpload('gif-section')}
+                                                                className="px-4 py-3 bg-[#2a2a2a] border border-gray-600 rounded text-gray-300 hover:bg-[#3a3a3a] cursor-pointer text-sm"
+                                                            >
+                                                                Upload GIF
+                                                            </button>
+                                                            {pageData.content.gifSection?.gifUrl && (
+                                                                <img src={pageData.content.gifSection.gifUrl} alt="GIF Preview" className="w-16 h-16 object-cover rounded" />
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Additional Banner Section */}
+                                        <div className="mb-8">
+                                            <div className="flex justify-between items-center mb-4 border-b border-gray-700 pb-2">
+                                                <h3 className="text-lg font-semibold text-white">Additional Banner Section</h3>
+                                                <label className="flex items-center gap-2 cursor-pointer">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={pageData.content.additionalBanner?.enabled || false}
+                                                        onChange={(e) => handleSectionToggle('additionalBanner', e.target.checked)}
+                                                        className="w-5 h-5 accent-[#d4a853]"
+                                                    />
+                                                    <span className="text-sm text-gray-400">Enable Section</span>
+                                                </label>
+                                            </div>
+                                            {pageData.content.additionalBanner?.enabled && (
+                                                <div className="bg-[#1a1a1a] p-4 rounded border border-gray-700">
+                                                    <InputField
+                                                        label="Heading"
+                                                        value={pageData.content.additionalBanner?.heading || ''}
+                                                        onChange={(e) => handleSectionFieldChange('additionalBanner', 'heading', e.target.value)}
+                                                    />
+                                                    <TextAreaField
+                                                        label="Subtext"
+                                                        value={pageData.content.additionalBanner?.subtext || ''}
+                                                        onChange={(e) => handleSectionFieldChange('additionalBanner', 'subtext', e.target.value)}
+                                                        rows={2}
+                                                    />
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                        <InputField
+                                                            label="Button Text"
+                                                            value={pageData.content.additionalBanner?.buttonText || ''}
+                                                            onChange={(e) => handleSectionFieldChange('additionalBanner', 'buttonText', e.target.value)}
+                                                        />
+                                                        <InputField
+                                                            label="Button Link"
+                                                            value={pageData.content.additionalBanner?.buttonLink || ''}
+                                                            onChange={(e) => handleSectionFieldChange('additionalBanner', 'buttonLink', e.target.value)}
+                                                        />
+                                                    </div>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                                                        <InputField
+                                                            label="Background Image URL"
+                                                            value={pageData.content.additionalBanner?.image || ''}
+                                                            onChange={(e) => handleSectionFieldChange('additionalBanner', 'image', e.target.value)}
+                                                        />
+                                                        <div className="mb-4 flex gap-2">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => triggerUpload('additional-banner')}
+                                                                className="px-4 py-3 bg-[#2a2a2a] border border-gray-600 rounded text-gray-300 hover:bg-[#3a3a3a] cursor-pointer text-sm"
+                                                            >
+                                                                Upload Image
+                                                            </button>
+                                                            {pageData.content.additionalBanner?.image && (
+                                                                <img src={pageData.content.additionalBanner.image} alt="Preview" className="w-16 h-12 object-cover rounded" />
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     </>
                                 )}
