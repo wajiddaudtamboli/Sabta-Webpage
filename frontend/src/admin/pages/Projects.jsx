@@ -96,63 +96,13 @@ const Projects = () => {
     };
 
     const handleImageUpload = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        setUploading(true);
-        const uploadData = new FormData();
-        uploadData.append('file', file);
-
-        try {
-            const response = await api.post('/media/upload', uploadData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
-            setFormData(prev => ({ 
-                ...prev, 
-                imageUrl: response.data.url,
-                featuredImage: prev.featuredImage || response.data.url 
-            }));
-            setMessage({ type: 'success', text: 'Image uploaded successfully!' });
-        } catch (error) {
-            console.error('Error uploading image:', error);
-            setMessage({ type: 'error', text: 'Failed to upload image' });
-        } finally {
-            setUploading(false);
-        }
+        // Removed file upload functionality - now using URL inputs only
+        return;
     };
 
     const handleGalleryUpload = async (e) => {
-        const files = Array.from(e.target.files);
-        if (!files.length) return;
-
-        setUploadingGallery(true);
-        try {
-            const uploadPromises = files.map(async (file) => {
-                const uploadData = new FormData();
-                uploadData.append('file', file);
-                const response = await api.post('/media/upload', uploadData, {
-                    headers: { 'Content-Type': 'multipart/form-data' }
-                });
-                return {
-                    url: response.data.url,
-                    caption: '',
-                    displayOrder: formData.gallery.length
-                };
-            });
-
-            const newImages = await Promise.all(uploadPromises);
-            setFormData(prev => ({
-                ...prev,
-                gallery: [...prev.gallery, ...newImages]
-            }));
-            setMessage({ type: 'success', text: `${files.length} image(s) added to gallery!` });
-        } catch (error) {
-            console.error('Error uploading gallery images:', error);
-            setMessage({ type: 'error', text: 'Failed to upload gallery images' });
-        } finally {
-            setUploadingGallery(false);
-            if (galleryInputRef.current) galleryInputRef.current.value = '';
-        }
+        // Removed file upload functionality - now using URL inputs only
+        return;
     };
 
     const removeGalleryImage = (index) => {
