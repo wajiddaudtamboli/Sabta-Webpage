@@ -80,6 +80,17 @@ router.get('/admin', authMiddleware, async (req, res) => {
     }
 });
 
+// Get product count (Admin)
+router.get('/admin/count', authMiddleware, async (req, res) => {
+    try {
+        const count = await Product.countDocuments();
+        res.json({ count });
+    } catch (err) {
+        console.error('Error counting products:', err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
 // Get products by category (public)
 router.get('/category/:category', async (req, res) => {
     try {

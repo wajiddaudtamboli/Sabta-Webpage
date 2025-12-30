@@ -18,27 +18,53 @@ const Dashboard = () => {
         const fetchStats = async () => {
             setLoading(true);
             try {
-                const [productsRes, blogsRes, enquiriesRes, mediaRes] = await Promise.all([
-                    api.get('/products/admin'),
-                    api.get('/blogs/admin'),
-                    api.get('/enquiries'),
-                    api.get('/media')
-                ]);
+                // Fetch stats individually to handle failures gracefully
+                const statsData = {
+                    products: 0,
+                    blogs: 0,
+                    enquiries: 0,
+                    newEnquiries: 0,
+                    media: 0
+                };
 
-                const enquiries = enquiriesRes.data;
-                const newEnquiries = enquiries.filter(e => e.status === 'new').length;
+                // Fetch products count
+                try {
+                    const productsRes = await api.get('/products/admin/count');
+                    statsData.products = productsRes.data.count;
+                } catch (error) {
+                    console.error('Error fetching products count:', error);
+                }
 
-                setStats({
-                    products: productsRes.data.length,
-                    blogs: blogsRes.data.length,
-                    enquiries: enquiries.length,
-                    newEnquiries,
-                    media: mediaRes.data.length
-                });
+                // Fetch blogs
+                try {
+                    const blogsRes = await api.get('/blogs/admin');
+                    statsData.blogs = blogsRes.data.length;
+                } catch (error) {
+                    console.error('Error fetching blogs:', error);
+                }
 
-                setRecentEnquiries(enquiries.slice(0, 5));
+                // Fetch enquiries
+                try {
+                    const enquiriesRes = await api.get('/enquiries');
+                    const enquiries = enquiriesRes.data;
+                    statsData.enquiries = enquiries.length;
+                    statsData.newEnquiries = enquiries.filter(e => e.status === 'new').length;
+                    setRecentEnquiries(enquiries.slice(0, 5));
+                } catch (error) {
+                    console.error('Error fetching enquiries:', error);
+                }
+
+                // Fetch media
+                try {
+                    const mediaRes = await api.get('/media');
+                    statsData.media = mediaRes.data.length;
+                } catch (error) {
+                    console.error('Error fetching media:', error);
+                }
+
+                setStats(statsData);
             } catch (err) {
-                console.error('Error fetching stats:', err);
+                console.error('Error in fetchStats:', err);
             } finally {
                 setLoading(false);
             }
