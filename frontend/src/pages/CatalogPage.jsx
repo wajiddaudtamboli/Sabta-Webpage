@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { IoCloseOutline } from "react-icons/io5";
-import { HiDocumentText, HiDownload, HiEye } from "react-icons/hi";
+import { HiDocumentText, HiDownload } from "react-icons/hi";
 import CatalogueBanner from "../assets/BannerImages/Quartz.jpeg";
 import { api } from "../api/api";
 
@@ -8,9 +8,7 @@ const CatalogPage = () => {
   const [catalogues, setCatalogues] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [showPdfViewer, setShowPdfViewer] = useState(false);
   const [selectedFile, setSelectedFile] = useState("");
-  const [pdfFile, setPdfFile] = useState("");
 
   // Fetch catalogues from API
   useEffect(() => {
@@ -32,18 +30,11 @@ const CatalogPage = () => {
     const handleEsc = (e) => {
       if (e.key === "Escape") {
         setShowForm(false);
-        setShowPdfViewer(false);
       }
     };
     window.addEventListener("keydown", handleEsc);
     return () => window.removeEventListener("keydown", handleEsc);
   }, []);
-
-  // VIEW PDF POPUP
-  const handleView = (file) => {
-    setPdfFile(file);
-    setShowPdfViewer(true);
-  };
 
   // DOWNLOAD WINDOW
   const handleDownloadClick = (file) => {
@@ -115,13 +106,6 @@ const CatalogPage = () => {
                 )}
 
                 <div className="flex gap-6">
-                  <button
-                    onClick={() => handleView(catalogue.fileUrl)}
-                    className="underline flex items-center gap-1 hover:text-[#d4a853] transition"
-                  >
-                    <HiEye className="w-4 h-4" /> View Online
-                  </button>
-
                   <button
                     onClick={() => handleDownloadClick(catalogue.fileUrl)}
                     className="border px-4 py-2 rounded-lg hover:opacity-80 flex items-center gap-1"
