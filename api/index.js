@@ -153,6 +153,7 @@ try {
     app.use('/api/pages', requireDB, require(path.join(routesPath, 'pages')));
     app.use('/api/products', requireDB, require(path.join(routesPath, 'products')));
     app.use('/api/collections', requireDB, require(path.join(routesPath, 'collections')));
+    app.use('/api/catalogues', requireDB, require(path.join(routesPath, 'catalogues')));
     app.use('/api/blogs', requireDB, require(path.join(routesPath, 'blogs')));
     app.use('/api/enquiries', requireDB, require(path.join(routesPath, 'enquiries')));
     app.use('/api/media', requireDB, require(path.join(routesPath, 'media')));
