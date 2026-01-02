@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../api/api';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaCalendarAlt, FaChevronLeft, FaChevronRight, FaBuilding, FaMapMarkerAlt, FaTag } from 'react-icons/fa';
+import { FaCalendarAlt, FaChevronLeft, FaChevronRight, FaBuilding, FaMapMarkerAlt, FaTag, FaSearchPlus, FaExternalLinkAlt, FaTimes } from 'react-icons/fa';
 
 const Projects = () => {
     const [projects, setProjects] = useState([]);
@@ -14,6 +14,7 @@ const Projects = () => {
     const [submitting, setSubmitting] = useState(false);
     const [submitStatus, setSubmitStatus] = useState(null);
     const [pageData, setPageData] = useState(null);
+    const [zoomImage, setZoomImage] = useState(null); // For image zoom modal
 
     
     const [currentSlide, setCurrentSlide] = useState(0);
@@ -402,6 +403,32 @@ const Projects = () => {
                                                         </div>
                                                     )}
                                                     
+                                                    {/* Image Zoom/Open Buttons */}
+                                                    {project.imageUrl && (
+                                                        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex gap-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setZoomImage({ url: project.imageUrl, title: project.title });
+                                                                }}
+                                                                className="w-10 h-10 rounded-full bg-black/70 backdrop-blur-sm flex items-center justify-center text-white hover:bg-[#d4a853] hover:text-black transition-all cursor-pointer"
+                                                                title="Zoom Image"
+                                                            >
+                                                                <FaSearchPlus />
+                                                            </button>
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    window.open(project.imageUrl, '_blank');
+                                                                }}
+                                                                className="w-10 h-10 rounded-full bg-black/70 backdrop-blur-sm flex items-center justify-center text-white hover:bg-[#d4a853] hover:text-black transition-all cursor-pointer"
+                                                                title="Open in New Tab"
+                                                            >
+                                                                <FaExternalLinkAlt />
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                    
                                                     {}
                                                     <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/30 to-transparent" />
                                                     
@@ -625,6 +652,59 @@ const Projects = () => {
                                         {submitting ? 'Submitting...' : 'Submit Request'}
                                     </button>
                                 </form>
+                            )}
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Image Zoom Modal */}
+            <AnimatePresence>
+                {zoomImage && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4"
+                        onClick={() => setZoomImage(null)}
+                    >
+                        {/* Close button */}
+                        <button
+                            onClick={() => setZoomImage(null)}
+                            className="absolute top-4 right-4 w-12 h-12 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center text-white hover:bg-[#d4a853] hover:text-black transition-all cursor-pointer z-10"
+                        >
+                            <FaTimes className="text-xl" />
+                        </button>
+
+                        {/* Open in new tab button */}
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                window.open(zoomImage.url, '_blank');
+                            }}
+                            className="absolute top-4 right-20 w-12 h-12 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center text-white hover:bg-[#d4a853] hover:text-black transition-all cursor-pointer z-10"
+                            title="Open in New Tab"
+                        >
+                            <FaExternalLinkAlt />
+                        </button>
+
+                        {/* Image */}
+                        <motion.div
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.8, opacity: 0 }}
+                            className="max-w-5xl max-h-[90vh] relative"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <img
+                                src={zoomImage.url}
+                                alt={zoomImage.title}
+                                className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl"
+                            />
+                            {zoomImage.title && (
+                                <div className="absolute bottom-0 left-0 right-0 bg-black/70 backdrop-blur-sm text-white text-center py-3 px-4 rounded-b-lg">
+                                    <h4 className="text-lg font-semibold">{zoomImage.title}</h4>
+                                </div>
                             )}
                         </motion.div>
                     </motion.div>
