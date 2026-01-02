@@ -31,6 +31,7 @@ const Products = () => {
     // Product images state for carousel
     const [productImages, setProductImages] = useState([]);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
+    const [newImageUrl, setNewImageUrl] = useState('');
     
     // Image upload ref
     const imageInputRef = useRef(null);
@@ -439,6 +440,23 @@ const Products = () => {
                 imageInputRef.current.value = '';
             }
         }
+    };
+
+    // Handle adding image by URL
+    const handleAddImageUrl = () => {
+        if (!newImageUrl.trim()) {
+            alert('Please enter a valid image URL');
+            return;
+        }
+        // Basic URL validation
+        if (!newImageUrl.match(/^https?:\/\/.+\.(jpg|jpeg|png|gif|webp|svg)/i) && !newImageUrl.startsWith('http')) {
+            if (!window.confirm('This URL may not be a valid image. Add anyway?')) {
+                return;
+            }
+        }
+        setProductImages(prev => [...prev, newImageUrl.trim()]);
+        setNewImageUrl('');
+        showToast('Image URL added successfully');
     };
 
     // Handle image delete from list
@@ -853,12 +871,100 @@ const Products = () => {
                         </span>
                     </div>
                 )}
+
+                {/* Products List Table - Visible when collection selected */}
+                {selectedCollection && products.length > 0 && !isEditing && (
+                    <div className="mt-6 bg-[#1a1a1a] rounded border border-gray-700 overflow-x-auto">
+                        <table className="w-full text-sm">
+                            <thead>
+                                <tr className="border-b border-gray-700 bg-[#2a2a2a]">
+                                    <th className="p-3 text-left">Sr No</th>
+                                    <th className="p-3 text-left">Image</th>
+                                    <th className="p-3 text-left">Code</th>
+                                    <th className="p-3 text-left">Product Name</th>
+                                    <th className="p-3 text-left">Color</th>
+                                    <th className="p-3 text-left">Origin</th>
+                                    <th className="p-3 text-left">Status</th>
+                                    <th className="p-3 text-left">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {products.map((product, index) => (
+                                    <tr 
+                                        key={product._id} 
+                                        className="border-b border-gray-700 hover:bg-[#2a2a2a] cursor-pointer"
+                                        onClick={() => handleProductSelect(product)}
+                                    >
+                                        <td className="p-3">{index + 1}</td>
+                                        <td className="p-3">
+                                            {product.images && product.images.length > 0 ? (
+                                                <img src={product.images[0]} alt={product.name} className="w-12 h-12 object-cover rounded" />
+                                            ) : (
+                                                <div className="w-12 h-12 bg-gray-600 rounded flex items-center justify-center">
+                                                    <HiPhotograph className="w-6 h-6 text-gray-400" />
+                                                </div>
+                                            )}
+                                        </td>
+                                        <td className="p-3 font-mono text-[#d4a853]">{product.code || '-'}</td>
+                                        <td className="p-3 font-medium">{product.name}</td>
+                                        <td className="p-3">{product.color || '-'}</td>
+                                        <td className="p-3">{product.origin || '-'}</td>
+                                        <td className="p-3">
+                                            <span className={`px-2 py-1 rounded text-xs ${product.status === 'active' ? 'bg-green-600' : 'bg-gray-600'}`}>
+                                                {product.status || 'active'}
+                                            </span>
+                                        </td>
+                                        <td className="p-3">
+                                            <MenuButton 
+                                                product={product}
+                                                onView={() => handleProductSelect(product)}
+                                                onEdit={() => handleProductSelect(product)}
+                                                onDelete={() => handleDelete(product._id)}
+                                            />
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+
+                {/* No Products Message */}
+                {selectedCollection && products.length === 0 && !isEditing && (
+                    <div className="mt-6 bg-[#1a1a1a] rounded border border-gray-700 p-8 text-center">
+                        <HiPhotograph className="w-16 h-16 text-gray-500 mx-auto mb-4" />
+                        <p className="text-gray-400 mb-4">No products found in "{selectedCollection.name}"</p>
+                        <button
+                            onClick={() => {
+                                resetForm();
+                                setIsEditing(true);
+                            }}
+                            className="bg-[#d4a853] text-black px-6 py-2 rounded font-medium hover:bg-[#c49743] cursor-pointer"
+                        >
+                            <HiPlus className="w-5 h-5 inline mr-2" /> Add First Product
+                        </button>
+                    </div>
+                )}
             </div>
 
             {/* Product Edit Screen */}
             {isEditing && (
                 <div className="mb-8">
-                    <h3 className="text-lg font-semibold mb-4">1 Product Edit Screen</h3>
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-semibold">
+                            {selectedProduct ? `Edit Product: ${selectedProduct.name}` : 'Add New Product'}
+                        </h3>
+                        <button
+                            onClick={() => {
+                                setIsEditing(false);
+                                setSelectedProduct(null);
+                                resetForm();
+                            }}
+                            className="flex items-center gap-2 text-gray-400 hover:text-white cursor-pointer"
+                        >
+                            <HiX className="w-5 h-5" /> Back to List
+                        </button>
+                    </div>
                     
                     <div className="bg-[#1a1a1a] rounded border border-gray-700 p-6">
                         {/* Top Section */}
@@ -1165,7 +1271,10 @@ const Products = () => {
                                 <tbody>
                                     {productImages.length > 0 ? productImages.map((imgUrl, index) => (
                                         <tr key={index} className="border-b border-gray-600">
-                                            <td className="p-2">Image {index + 1}</td>
+                                            <td className="p-2 flex items-center gap-2">
+                                                <img src={imgUrl} alt={`Image ${index + 1}`} className="w-10 h-10 object-cover rounded" onError={(e) => e.target.style.display='none'} />
+                                                Image {index + 1}
+                                            </td>
                                             <td className="p-2">
                                                 <input 
                                                     type="checkbox" 
@@ -1177,22 +1286,38 @@ const Products = () => {
                                             <td className="p-2">
                                                 <div className="flex gap-2">
                                                     <ActionButton onClick={() => window.open(imgUrl, '_blank')}>View</ActionButton>
-                                                    <ActionButton onClick={() => setCurrentImageIndex(index)}>Edit</ActionButton>
+                                                    <ActionButton onClick={() => setCurrentImageIndex(index)}>Select</ActionButton>
                                                     <ActionButton onClick={() => handleDeleteImage(index)}>Delete</ActionButton>
                                                 </div>
                                             </td>
                                         </tr>
                                     )) : (
                                         <tr className="border-b border-gray-600">
-                                            <td className="p-2 text-gray-500" colSpan="3">No images uploaded. Click "Upload Image" to add.</td>
+                                            <td className="p-2 text-gray-500" colSpan="3">No images added. Add images using URL below.</td>
                                         </tr>
                                     )}
                                 </tbody>
                             </table>
                             
-                            {/* Upload button at bottom of image list */}
-                            <div className="flex justify-center mt-4">
-                                <ActionButton onClick={() => imageInputRef.current?.click()}>+ Upload Image</ActionButton>
+                            {/* Add Image by URL */}
+                            <div className="mt-4 p-4 bg-[#2a2a2a] rounded">
+                                <h5 className="text-sm text-[#d4a853] mb-2">Add Image by URL</h5>
+                                <div className="flex gap-2">
+                                    <input
+                                        type="text"
+                                        value={newImageUrl}
+                                        onChange={(e) => setNewImageUrl(e.target.value)}
+                                        placeholder="https://example.com/image.jpg"
+                                        className="flex-1 bg-[#1a1a1a] border border-gray-600 rounded px-3 py-2 text-white"
+                                        onKeyPress={(e) => e.key === 'Enter' && handleAddImageUrl()}
+                                    />
+                                    <button
+                                        onClick={handleAddImageUrl}
+                                        className="bg-[#d4a853] text-black px-4 py-2 rounded font-medium hover:bg-[#c49743] cursor-pointer"
+                                    >
+                                        + Add Image
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
