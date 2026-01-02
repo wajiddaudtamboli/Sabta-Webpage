@@ -24,7 +24,7 @@ const Navbar = () => {
         <div className="flex items-center justify-between px-4 sm:px-6 w-full max-w-full">
           {/* Logo */}
           <div className=" text-2xl font-bold">
-            <img src={Logo} alt="logo" className="h-30 -my-2.5" />
+            <img src={Logo} alt="logo" className="h-36 -my-3" />
           </div>
 
           {/* Desktop Menu */}
@@ -40,13 +40,6 @@ const Navbar = () => {
               <Link to="/new-arrival">
                 <button className="p-2 bg-(--brand-bg) font-semibold rounded hover:scale-105 transition">
                   NEW ARRIVALS
-                </button>
-              </Link>
-            </li>
-            <li>
-              <Link to="/admin/login">
-                <button className="p-2 border border-(--brand-accent) font-semibold rounded hover:bg-(--brand-accent) hover:text-black transition">
-                  ADMIN
                 </button>
               </Link>
             </li>
@@ -118,11 +111,6 @@ const Navbar = () => {
           <Link to="/new-arrival" onClick={() => setMenuOpen(false)} className="block">
             <button>
               NEW ARRIVALS
-            </button>
-          </Link>
-          <Link to="/admin/login" onClick={() => setMenuOpen(false)} className="block">
-            <button className="border border-(--brand-accent) px-4 py-2 rounded hover:bg-(--brand-accent) hover:text-black transition">
-              ADMIN LOGIN
             </button>
           </Link>
         </nav>

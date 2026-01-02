@@ -182,8 +182,8 @@ const Projects = () => {
                             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
                                 {pageData?.heroTitle || 'Projects'}
                             </h1>
-                            <p className="text-gray-400 text-lg leading-relaxed mb-8 max-w-lg">
-                                {pageData?.heroDescription || 'Explore our portfolio of prestigious projects showcasing excellence in granite and marble craftsmanship across the UAE and beyond.'}
+                            <p className="text-gray-400 text-lg leading-relaxed mb-8 max-w-lg text-justify">
+                                {pageData?.heroDescription || 'Explore a refined portfolio showcasing Sabta Granite\'s mastery in granite, marble, travertine, limestone, engineered marble, quartz, and terrazzo. Our projects span landmark commercial developments and elegant residential spaces, where material selection, precision detailing, and lasting quality come together. Each project reflects a commitment to craftsmanship that enhances the character and value of every space across the UAE and beyond.'}
                             </p>
                             
                             {}

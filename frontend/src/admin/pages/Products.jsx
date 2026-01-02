@@ -835,6 +835,24 @@ const Products = () => {
                         </tbody>
                     </table>
                 </div>
+                
+                {/* Add Product Button - Always visible when collection is selected */}
+                {selectedCollection && (
+                    <div className="mt-4 flex items-center gap-4">
+                        <button
+                            onClick={() => {
+                                resetForm();
+                                setIsEditing(true);
+                            }}
+                            className="bg-[#d4a853] text-black px-6 py-2 rounded font-medium hover:bg-[#c49743] cursor-pointer flex items-center gap-2"
+                        >
+                            <HiPlus className="w-5 h-5" /> Add Product to "{selectedCollection.name}"
+                        </button>
+                        <span className="text-gray-400 text-sm">
+                            {products.length} product(s) in this collection
+                        </span>
+                    </div>
+                )}
             </div>
 
             {/* Product Edit Screen */}
