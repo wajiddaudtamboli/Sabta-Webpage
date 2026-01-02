@@ -403,48 +403,50 @@ const Projects = () => {
                                                         </div>
                                                     )}
                                                     
-                                                    {/* Image Zoom/Open Buttons */}
+                                                    {/* Gradient Overlay */}
+                                                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent pointer-events-none" />
+                                                    
+                                                    {/* Image Zoom/Open Buttons - Higher z-index */}
                                                     {project.imageUrl && (
-                                                        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex gap-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
+                                                        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex gap-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
                                                             <button
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
+                                                                    e.preventDefault();
                                                                     setZoomImage({ url: project.imageUrl, title: project.title });
                                                                 }}
-                                                                className="w-10 h-10 rounded-full bg-black/70 backdrop-blur-sm flex items-center justify-center text-white hover:bg-[#d4a853] hover:text-black transition-all cursor-pointer"
+                                                                className="w-12 h-12 rounded-full bg-black/80 backdrop-blur-sm flex items-center justify-center text-white hover:bg-[#d4a853] hover:text-black transition-all cursor-pointer shadow-lg"
                                                                 title="Zoom Image"
                                                             >
-                                                                <FaSearchPlus />
+                                                                <FaSearchPlus className="text-lg" />
                                                             </button>
                                                             <button
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
+                                                                    e.preventDefault();
                                                                     window.open(project.imageUrl, '_blank');
                                                                 }}
-                                                                className="w-10 h-10 rounded-full bg-black/70 backdrop-blur-sm flex items-center justify-center text-white hover:bg-[#d4a853] hover:text-black transition-all cursor-pointer"
+                                                                className="w-12 h-12 rounded-full bg-black/80 backdrop-blur-sm flex items-center justify-center text-white hover:bg-[#d4a853] hover:text-black transition-all cursor-pointer shadow-lg"
                                                                 title="Open in New Tab"
                                                             >
-                                                                <FaExternalLinkAlt />
+                                                                <FaExternalLinkAlt className="text-lg" />
                                                             </button>
                                                         </div>
                                                     )}
                                                     
                                                     {}
-                                                    <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/30 to-transparent" />
-                                                    
-                                                    {}
-                                                    <div className="absolute top-4 left-4 flex items-center gap-2 bg-black/70 backdrop-blur-sm text-white text-sm font-medium px-3 py-1.5 rounded-lg">
+                                                    <div className="absolute top-4 left-4 flex items-center gap-2 bg-black/70 backdrop-blur-sm text-white text-sm font-medium px-3 py-1.5 rounded-lg z-10">
                                                         <FaCalendarAlt className="text-[#d4a853]" />
                                                         {project.year}
                                                     </div>
                                                     
                                                     {}
-                                                    <div className={`absolute top-4 right-4 text-xs font-semibold px-3 py-1.5 rounded-full ${getStatusBadgeStyle(project.status)}`}>
+                                                    <div className={`absolute top-4 right-4 text-xs font-semibold px-3 py-1.5 rounded-full z-10 ${getStatusBadgeStyle(project.status)}`}>
                                                         {getStatusLabel(project.status)}
                                                     </div>
 
                                                     {}
-                                                    <div className="absolute bottom-4 left-4 right-4">
+                                                    <div className="absolute bottom-4 left-4 right-4 z-10">
                                                         <span className="inline-flex items-center gap-1.5 bg-[#d4a853] text-black text-xs font-semibold px-3 py-1.5 rounded-full">
                                                             <FaBuilding className="text-xs" />
                                                             {project.clientName}
