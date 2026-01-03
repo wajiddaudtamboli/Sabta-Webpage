@@ -207,7 +207,7 @@ const Collections = () => {
                 <div className="flex flex-col items-center">
                   {/* 3D Tilted Card - Playing Card Style */}
                   <div
-                    className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden cursor-pointer"
+                    className="relative w-full aspect-3/4 rounded-2xl overflow-hidden cursor-pointer"
                     style={{
                       transform: `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1)`,
                       transformStyle: 'preserve-3d',

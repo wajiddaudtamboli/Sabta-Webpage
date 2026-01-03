@@ -241,7 +241,7 @@ const Home = () => {
                   />
 
                   {/* OVERLAY */}
-                  <div className="absolute inset-0 bg-gradient-to-b from-black/60 to-transparent"></div>
+                  <div className="absolute inset-0 bg-linear-to-b from-black/60 to-transparent"></div>
 
                   {/* TEXT LAYER */}
                   <div className="absolute top-6 left-6 right-6 text-white z-20">
