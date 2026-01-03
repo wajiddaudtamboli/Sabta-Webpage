@@ -96,12 +96,12 @@ const Footer = () => {
 
           {/* ---------- SOCIAL LINKS ---------- */}
           <div className="lg:w-1/3 md:pl-10">
-            <h3 className="text-lg font-semibold mb-4">Follow Us</h3>
+            <h3 className="text-lg font-semibold mb-4 text-center">Follow Us</h3>
 
             {/* Social Media Frame for Desktop */}
-            <div className="flex flex-col gap-6">
+            <div className="flex flex-col items-center gap-6">
               {/* Social Icons with Frame */}
-              <div className="flex items-center gap-4 p-3 bg-black/40 rounded-xl border border-[#d4a853]/30">
+              <div className="flex items-center justify-center gap-4 p-3 bg-black/40 rounded-xl border border-[#d4a853]/30">
                 <a href="https://www.facebook.com/SGMT2003" target="_blank" rel="noopener noreferrer" className="w-10 h-10 flex items-center justify-center rounded-lg bg-[#d4a853]/10 hover:bg-[#d4a853]/30 text-[#d4a853] transition-all duration-300 hover:scale-110">
                   <FaFacebookSquare size={22} />
                 </a>
@@ -124,7 +124,7 @@ const Footer = () => {
               </div>
 
               {/* Location QR Code with Label */}
-              <div className="flex items-center gap-4 p-3 bg-black/40 rounded-xl border border-[#d4a853]/30">
+              <div className="flex items-center justify-center gap-4 p-3 bg-black/40 rounded-xl border border-[#d4a853]/30">
                 <div className="bg-white p-2 rounded-lg">
                   <img
                     src={LocationQR}
