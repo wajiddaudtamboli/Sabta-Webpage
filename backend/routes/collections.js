@@ -95,7 +95,35 @@ router.get('/:identifier', async (req, res) => {
         if (req.params.identifier.match(/^[0-9a-fA-F]{24}$/)) {
             collection = await Collection.findById(req.params.identifier);
         } else {
+            // Try to find by slug first
             collection = await Collection.findOne({ slug: req.params.identifier });
+            
+            // If not found by slug, try to match by name (convert slug to name format)
+            if (!collection) {
+                const nameFromSlug = req.params.identifier
+                    .split('-')
+                    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                    .join(' ');
+                
+                // Try to find collection where name starts with the search term (exact match at beginning)
+                // This ensures "Marble Series" matches before "Engineered Marble Series"
+                collection = await Collection.findOne({
+                    name: { $regex: new RegExp(`^${nameFromSlug}`, 'i') }
+                });
+                
+                // If still not found, try partial match
+                if (!collection) {
+                    collection = await Collection.findOne({
+                        name: { $regex: new RegExp(nameFromSlug, 'i') }
+                    });
+                }
+                
+                // If found, update the collection with the slug for future lookups
+                if (collection && !collection.slug) {
+                    collection.slug = req.params.identifier;
+                    await collection.save();
+                }
+            }
         }
         
         if (!collection) {

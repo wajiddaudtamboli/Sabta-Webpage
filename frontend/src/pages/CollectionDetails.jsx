@@ -40,6 +40,7 @@ const CollectionDetail = () => {
 
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [collectionLoading, setCollectionLoading] = useState(true);
   const [collectionData, setCollectionData] = useState(null);
 
   // FILTER STATES
@@ -58,6 +59,7 @@ const CollectionDetail = () => {
     } catch (err) {
       console.error("Error loading collection:", err);
     }
+    setCollectionLoading(false);
   };
 
   const loadProducts = async () => {
@@ -77,6 +79,8 @@ const CollectionDetail = () => {
   };
 
   useEffect(() => {
+    setCollectionLoading(true);
+    setLoading(true);
     loadCollection();
     loadProducts();
   }, [collectionName, filters]);
@@ -267,8 +271,8 @@ const CollectionDetail = () => {
     background: collectionData.name?.toUpperCase() || title.toUpperCase(),
   } : null);
   
-  // Show loading or 404 only if no static content AND no dynamic data yet
-  if (!collectionContent[collectionName] && !collectionData && !loading) {
+  // Show loading or 404 only if no static content AND no dynamic data yet AND both finished loading
+  if (!collectionContent[collectionName] && !collectionData && !loading && !collectionLoading) {
     // Return a simple collection page instead of 404
     return (
       <div className="min-h-screen bg-[#1a1a1a] text-white">
