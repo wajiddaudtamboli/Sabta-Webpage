@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { HiCamera, HiPhotograph, HiEye, HiTrash, HiClipboardCopy, HiX } from 'react-icons/hi';
+import { HiCamera, HiPhotograph, HiEye, HiTrash, HiClipboardCopy, HiX, HiZoomIn, HiZoomOut } from 'react-icons/hi';
 import { api } from '../../api/api';
 
 const Media = () => {
@@ -11,10 +11,56 @@ const Media = () => {
     const [view, setView] = useState('grid');
     const [deviceFrame, setDeviceFrame] = useState('mobile');
     const [showFramePreview, setShowFramePreview] = useState(false);
+    const [zoomLevel, setZoomLevel] = useState(1);
+    const [fullscreenImage, setFullscreenImage] = useState(null);
+
+    // Zoom controls
+    const handleZoomIn = () => {
+        setZoomLevel(prev => Math.min(prev + 0.25, 3));
+    };
+
+    const handleZoomOut = () => {
+        setZoomLevel(prev => Math.max(prev - 0.25, 0.5));
+    };
+
+    const resetZoom = () => {
+        setZoomLevel(1);
+    };
+
+    // Open fullscreen image viewer
+    const openFullscreen = (url) => {
+        setFullscreenImage(url);
+        setZoomLevel(1);
+    };
+
+    const closeFullscreen = () => {
+        setFullscreenImage(null);
+        setZoomLevel(1);
+    };
 
     useEffect(() => {
         fetchMedia();
     }, []);
+
+    // Keyboard support for fullscreen viewer
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (fullscreenImage) {
+                if (e.key === 'Escape') {
+                    closeFullscreen();
+                } else if (e.key === '+' || e.key === '=') {
+                    handleZoomIn();
+                } else if (e.key === '-') {
+                    handleZoomOut();
+                } else if (e.key === '0') {
+                    resetZoom();
+                }
+            }
+        };
+        
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [fullscreenImage]);
 
     const fetchMedia = async () => {
         setLoading(true);
@@ -255,13 +301,24 @@ const Media = () => {
                             </button>
                         </div>
 
-                        {/* Image Preview */}
+                        {/* Image Preview with Zoom Controls */}
                         <div className="p-4">
-                            <img 
-                                src={selectedMedia.url} 
-                                alt="Selected" 
-                                className="w-full max-h-64 object-contain rounded-lg bg-[#1a1a1a]"
-                            />
+                            <div className="relative bg-[#1a1a1a] rounded-lg overflow-hidden">
+                                <img 
+                                    src={selectedMedia.url} 
+                                    alt="Selected" 
+                                    className="w-full max-h-64 object-contain cursor-zoom-in"
+                                    onClick={() => openFullscreen(selectedMedia.url)}
+                                />
+                                {/* Zoom In Icon Overlay */}
+                                <button
+                                    onClick={() => openFullscreen(selectedMedia.url)}
+                                    className="absolute top-2 right-2 p-2 bg-black/60 hover:bg-[#d4a853] rounded-full cursor-pointer transition-all duration-200 group"
+                                    title="Zoom In"
+                                >
+                                    <HiZoomIn className="w-5 h-5 text-white group-hover:text-black" />
+                                </button>
+                            </div>
                         </div>
 
                         {/* Device Frame Preview Toggle */}
@@ -389,6 +446,85 @@ const Media = () => {
                                 </button>
                             </div>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Fullscreen Image Viewer with Zoom Controls */}
+            {fullscreenImage && (
+                <div 
+                    className="fixed inset-0 bg-black/95 flex flex-col items-center justify-center z-[60]"
+                    onClick={closeFullscreen}
+                >
+                    {/* Zoom Controls - Fixed at top */}
+                    <div 
+                        className="fixed top-4 left-1/2 transform -translate-x-1/2 flex items-center gap-2 bg-[#2a2a2a] rounded-full px-4 py-2 shadow-xl border border-gray-700 z-[70]"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <button
+                            onClick={handleZoomOut}
+                            disabled={zoomLevel <= 0.5}
+                            className="p-2 hover:bg-[#d4a853] hover:text-black rounded-full cursor-pointer transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed"
+                            style={{color: '#ffffff'}}
+                            title="Zoom Out"
+                        >
+                            <HiZoomOut className="w-6 h-6" />
+                        </button>
+                        
+                        <span 
+                            className="px-3 py-1 bg-[#1a1a1a] rounded-full text-sm font-medium min-w-[60px] text-center cursor-pointer"
+                            style={{color: '#d4a853'}}
+                            onClick={resetZoom}
+                            title="Reset Zoom"
+                        >
+                            {Math.round(zoomLevel * 100)}%
+                        </span>
+                        
+                        <button
+                            onClick={handleZoomIn}
+                            disabled={zoomLevel >= 3}
+                            className="p-2 hover:bg-[#d4a853] hover:text-black rounded-full cursor-pointer transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed"
+                            style={{color: '#ffffff'}}
+                            title="Zoom In"
+                        >
+                            <HiZoomIn className="w-6 h-6" />
+                        </button>
+                    </div>
+
+                    {/* Close Button - Fixed at top right */}
+                    <button
+                        onClick={closeFullscreen}
+                        className="fixed top-4 right-4 p-3 bg-[#2a2a2a] hover:bg-red-600 rounded-full cursor-pointer transition-all duration-200 z-[70] border border-gray-700"
+                        style={{color: '#ffffff'}}
+                        title="Close"
+                    >
+                        <HiX className="w-6 h-6" />
+                    </button>
+
+                    {/* Zoomable Image Container */}
+                    <div 
+                        className="relative overflow-auto max-w-[95vw] max-h-[85vh] scrollbar-thin scrollbar-thumb-[#d4a853] scrollbar-track-transparent"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <img 
+                            src={fullscreenImage}
+                            alt="Fullscreen Preview"
+                            className="transition-transform duration-300 ease-out"
+                            style={{ 
+                                transform: `scale(${zoomLevel})`,
+                                transformOrigin: 'center center',
+                                maxWidth: zoomLevel <= 1 ? '90vw' : 'none',
+                                maxHeight: zoomLevel <= 1 ? '80vh' : 'none'
+                            }}
+                        />
+                    </div>
+
+                    {/* Bottom Instructions */}
+                    <div 
+                        className="fixed bottom-4 left-1/2 transform -translate-x-1/2 text-sm px-4 py-2 bg-[#2a2a2a]/80 rounded-full border border-gray-700"
+                        style={{color: '#9ca3af'}}
+                    >
+                        Click outside or press ESC to close • Use buttons to zoom
                     </div>
                 </div>
             )}
