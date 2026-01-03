@@ -9,6 +9,8 @@ const CatalogPage = () => {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [selectedFile, setSelectedFile] = useState("");
+  const [showPdfViewer, setShowPdfViewer] = useState(false);
+  const [pdfFile] = useState("");
 
   // Fetch catalogues from API
   useEffect(() => {

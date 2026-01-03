@@ -761,6 +761,32 @@ const Products = () => {
                 </div>
             )}
 
+            {/* Page Header with Add Product Button */}
+            <div className="flex items-center justify-between mb-6">
+                <h1 className="text-2xl font-bold text-white">Products Management</h1>
+                <div className="flex gap-3">
+                    <button
+                        onClick={() => {
+                            if (!selectedCollection) {
+                                showToast('Please select a collection first to add a product', 'error');
+                                return;
+                            }
+                            resetForm();
+                            setIsEditing(true);
+                        }}
+                        className="bg-[#d4a853] text-black px-4 py-2 rounded font-medium hover:bg-[#c49743] cursor-pointer flex items-center gap-2"
+                    >
+                        <HiPlus className="w-5 h-5" /> Add Product
+                    </button>
+                    <button
+                        onClick={() => excelInputRef.current?.click()}
+                        className="bg-gray-700 text-white px-4 py-2 rounded font-medium hover:bg-gray-600 cursor-pointer flex items-center gap-2"
+                    >
+                        <HiUpload className="w-5 h-5" /> Import CSV
+                    </button>
+                </div>
+            </div>
+
             {/* Collections Section */}
             <div className="mb-8">
                 <div className="flex items-center gap-2 mb-4">
