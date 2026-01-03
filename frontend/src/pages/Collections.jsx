@@ -70,8 +70,24 @@ const Collections = () => {
     return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
   };
 
-  // 3D Tilt effect handlers
-  const handleMouseMove = useCallback((e, cardElement) => {
+  // Get initial tilt angle based on card position (like fanned playing cards)
+  const getInitialTilt = (index) => {
+    // Alternate between left and right tilt for playing card effect
+    const tiltDirection = index % 2 === 0 ? -1 : 1;
+    const rotateY = tiltDirection * 8; // 8 degrees tilt
+    const rotateX = 3; // Slight forward tilt
+    return { rotateX, rotateY };
+  };
+
+  // Handle mouse enter - straighten the card and add dynamic tilt
+  const handleMouseEnter = useCallback((e, cardElement, index) => {
+    if (isTouchDevice() || !cardElement) return;
+    // Store the initial tilt for this card
+    cardElement.dataset.initialTiltY = getInitialTilt(index).rotateY;
+  }, []);
+
+  // 3D Tilt effect handlers - dynamic mouse tracking on hover
+  const handleMouseMove = useCallback((e, cardElement, index) => {
     if (isTouchDevice() || !cardElement) return;
 
     const rect = cardElement.getBoundingClientRect();
@@ -80,27 +96,31 @@ const Collections = () => {
     const mouseX = e.clientX - centerX;
     const mouseY = e.clientY - centerY;
     
-    // Calculate tilt angles (intensity = 12 degrees max)
-    const rotateX = (mouseY / (rect.height / 2)) * -12;
-    const rotateY = (mouseX / (rect.width / 2)) * 12;
+    // Calculate dynamic tilt angles based on mouse position
+    const rotateX = (mouseY / (rect.height / 2)) * -8;
+    const rotateY = (mouseX / (rect.width / 2)) * 8;
     
-    cardElement.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.03)`;
-    cardElement.style.boxShadow = '0 35px 60px rgba(0,0,0,0.5), 0 0 30px rgba(212,168,83,0.15)';
+    cardElement.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.05) translateY(-10px)`;
+    cardElement.style.boxShadow = '0 40px 70px rgba(0,0,0,0.5), 0 0 30px rgba(212,168,83,0.2)';
+    cardElement.style.zIndex = '10';
     
     // Update glare effect
     const glareEl = cardElement.querySelector('.tilt-glare');
     if (glareEl) {
       const glareX = ((e.clientX - rect.left) / rect.width) * 100;
       const glareY = ((e.clientY - rect.top) / rect.height) * 100;
-      glareEl.style.background = `radial-gradient(circle at ${glareX}% ${glareY}%, rgba(255,255,255,0.2) 0%, transparent 60%)`;
+      glareEl.style.background = `radial-gradient(circle at ${glareX}% ${glareY}%, rgba(255,255,255,0.25) 0%, transparent 60%)`;
       glareEl.style.opacity = '1';
     }
   }, []);
 
-  const handleMouseLeave = useCallback((cardElement) => {
+  // Handle mouse leave - return to initial tilted position
+  const handleMouseLeave = useCallback((cardElement, index) => {
     if (!cardElement) return;
-    cardElement.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale(1)';
-    cardElement.style.boxShadow = '0 20px 40px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.1)';
+    const { rotateX, rotateY } = getInitialTilt(index);
+    cardElement.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1)`;
+    cardElement.style.boxShadow = '0 25px 50px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.1)';
+    cardElement.style.zIndex = '1';
     
     const glareEl = cardElement.querySelector('.tilt-glare');
     if (glareEl) {
@@ -170,61 +190,66 @@ const Collections = () => {
         className="w-full px-6 sm:px-10 md:px-16 lg:px-24 py-16 bg-[#1a1a1a]"
         data-aos="fade-up"
       >
-        {/* Premium Tile Grid with 3D Tilt Effect */}
+        {/* Premium Tile Grid with Playing Card Style Tilt */}
         <div 
           className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8"
           style={{ perspective: '1500px' }}
         >
-          {collections.map((cat, index) => (
-            <Link
-              key={cat._id || index}
-              to={`/collections/${cat.slug || cat.name.toLowerCase().replace(/\s+/g, "-")}`}
-              className="block group"
-            >
-              {/* Card + Title Container */}
-              <div className="flex flex-col items-center">
-                {/* 3D Tilt Card */}
-                <div
-                  className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden cursor-pointer"
-                  style={{
-                    transform: 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale(1)',
-                    transformStyle: 'preserve-3d',
-                    transition: 'transform 0.15s ease-out, box-shadow 0.3s ease-out',
-                    boxShadow: '0 20px 40px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.1)',
-                    willChange: 'transform'
-                  }}
-                  onMouseMove={(e) => handleMouseMove(e, e.currentTarget)}
-                  onMouseLeave={(e) => handleMouseLeave(e.currentTarget)}
-                >
-                  {/* Stone Image - Full Coverage */}
-                  <img
-                    src={cat.img || cat.image}
-                    alt={cat.name}
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
-                  />
-                  
-                  {/* Glare Effect Overlay */}
-                  <div 
-                    className="tilt-glare absolute inset-0 pointer-events-none z-10 rounded-2xl transition-opacity duration-300"
-                    style={{ opacity: 0 }}
-                  />
-                  
-                  {/* Card Border Glow on Hover */}
-                  <div className="absolute inset-0 rounded-2xl border-2 border-transparent group-hover:border-[#d4a853]/40 transition-all duration-300"></div>
-                </div>
+          {collections.map((cat, index) => {
+            const { rotateX, rotateY } = getInitialTilt(index);
+            return (
+              <Link
+                key={cat._id || index}
+                to={`/collections/${cat.slug || cat.name.toLowerCase().replace(/\s+/g, "-")}`}
+                className="block group"
+              >
+                {/* Card + Title Container */}
+                <div className="flex flex-col items-center">
+                  {/* 3D Tilted Card - Playing Card Style */}
+                  <div
+                    className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden cursor-pointer"
+                    style={{
+                      transform: `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1)`,
+                      transformStyle: 'preserve-3d',
+                      transition: 'transform 0.4s ease-out, box-shadow 0.4s ease-out, z-index 0s',
+                      boxShadow: '0 25px 50px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.1)',
+                      willChange: 'transform',
+                      zIndex: 1
+                    }}
+                    onMouseEnter={(e) => handleMouseEnter(e, e.currentTarget, index)}
+                    onMouseMove={(e) => handleMouseMove(e, e.currentTarget, index)}
+                    onMouseLeave={(e) => handleMouseLeave(e.currentTarget, index)}
+                  >
+                    {/* Stone Image - Full Coverage */}
+                    <img
+                      src={cat.img || cat.image}
+                      alt={cat.name}
+                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-110"
+                    />
+                    
+                    {/* Glare Effect Overlay */}
+                    <div 
+                      className="tilt-glare absolute inset-0 pointer-events-none z-10 rounded-2xl transition-opacity duration-300"
+                      style={{ opacity: 0 }}
+                    />
+                    
+                    {/* Card Border Glow on Hover */}
+                    <div className="absolute inset-0 rounded-2xl border-2 border-transparent group-hover:border-[#d4a853]/50 transition-all duration-300"></div>
+                  </div>
 
-                {/* Title Below Card - Centered */}
-                <div className="mt-4 text-center">
-                  <h3 className="text-white text-lg sm:text-xl font-bold uppercase tracking-wider">
-                    {cat.name.replace(' Series', '')}
-                  </h3>
-                  <p className="text-[#d4a853] text-xs sm:text-sm uppercase tracking-widest mt-1">
-                    Series
-                  </p>
+                  {/* Title Below Card - Centered */}
+                  <div className="mt-4 text-center">
+                    <h3 className="text-white text-lg sm:text-xl font-bold uppercase tracking-wider">
+                      {cat.name.replace(' Series', '')}
+                    </h3>
+                    <p className="text-[#d4a853] text-xs sm:text-sm uppercase tracking-widest mt-1">
+                      Series
+                    </p>
+                  </div>
                 </div>
-              </div>
-            </Link>
-          ))}
+              </Link>
+            );
+          })}
         </div>
       </section>
 
