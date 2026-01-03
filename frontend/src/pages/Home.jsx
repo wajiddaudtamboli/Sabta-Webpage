@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import Hero from "../components/Hero";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -20,6 +20,45 @@ import Quartz from "../assets/CollectionImagesHome/Quartz.jpeg"
 import Terrazzo from "../assets/CollectionImagesHome/Terrazzo.jpeg"
 import MainImage from "../assets/BannerImages/Exotic-Granite.jpeg"
 import { api } from "../api/api";
+
+// Check if device is touch-based
+const isTouchDevice = () => {
+  return typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+};
+
+// 3D Tilt effect handler for cards
+const handleCardTilt = (e, cardElement) => {
+  if (isTouchDevice() || !cardElement) return;
+
+  const rect = cardElement.getBoundingClientRect();
+  const centerX = rect.left + rect.width / 2;
+  const centerY = rect.top + rect.height / 2;
+  const mouseX = e.clientX - centerX;
+  const mouseY = e.clientY - centerY;
+  
+  const rotateX = (mouseY / (rect.height / 2)) * -10;
+  const rotateY = (mouseX / (rect.width / 2)) * 10;
+  
+  cardElement.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.02)`;
+  
+  const glareEl = cardElement.querySelector('.tilt-glare');
+  if (glareEl) {
+    const glareX = ((e.clientX - rect.left) / rect.width) * 100;
+    const glareY = ((e.clientY - rect.top) / rect.height) * 100;
+    glareEl.style.background = `radial-gradient(circle at ${glareX}% ${glareY}%, rgba(255,255,255,0.15) 0%, transparent 60%)`;
+    glareEl.style.opacity = '1';
+  }
+};
+
+const handleCardReset = (cardElement) => {
+  if (!cardElement) return;
+  cardElement.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale(1)';
+  
+  const glareEl = cardElement.querySelector('.tilt-glare');
+  if (glareEl) {
+    glareEl.style.opacity = '0';
+  }
+};
 
 const Home = () => {
   const videoRef = useRef(null);
@@ -175,71 +214,44 @@ const Home = () => {
             <SwiperSlide key={index}>
               <Link to={item.link}>
                 <div
-                  className="
-        relative cursor-pointer h-[420px] rounded-xl overflow-hidden
-        transition-all duration-700
-        transform-gpu
-        perspective-distant
-        group
-      "
+                  className="relative cursor-pointer h-[420px] rounded-xl overflow-hidden"
+                  style={{
+                    transform: 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale(1)',
+                    transformStyle: 'preserve-3d',
+                    transition: 'transform 0.15s ease-out, box-shadow 0.3s ease-out',
+                    boxShadow: '0 15px 35px rgba(0,0,0,0.4)',
+                    willChange: 'transform'
+                  }}
+                  onMouseMove={(e) => handleCardTilt(e, e.currentTarget)}
+                  onMouseLeave={(e) => handleCardReset(e.currentTarget)}
                 >
-
-                  {/* BACKGROUND IMAGE (moves slightly) */}
-                  <div
-                    className="
-          absolute inset-0
-          transition-transform duration-700 ease-out
-          group-hover:scale-110
-          group-hover:-translate-z-10
-          transform-gpu
-        "
-                  >
+                  {/* BACKGROUND IMAGE */}
+                  <div className="absolute inset-0">
                     <img
                       src={item.img}
                       alt={item.name}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
                   </div>
 
-                  {/* OVERLAY */}
-                  <div className="absolute inset-0 bg-linear-to-b from-black/60 to-transparent"></div>
+                  {/* Glare Effect */}
+                  <div 
+                    className="tilt-glare absolute inset-0 pointer-events-none z-10 rounded-xl transition-opacity duration-300"
+                    style={{ opacity: 0 }}
+                  />
 
-                  {/* TEXT LAYER (moves more for parallax) */}
-                  <div
-                    className="
-          absolute top-6 left-6 right-20 text-white z-30
-          transition-transform duration-700 ease-out transform-gpu
-          group-hover:translate-z-[60px] group-hover:-translate-y-2
-        "
-                  >
-                    <h2 className="text-3xl font-extrabold capitalize leading-tight drop-shadow-lg">
+                  {/* OVERLAY */}
+                  <div className="absolute inset-0 bg-gradient-to-b from-black/60 to-transparent"></div>
+
+                  {/* TEXT LAYER */}
+                  <div className="absolute top-6 left-6 right-6 text-white z-20">
+                    <h2 className="text-2xl sm:text-3xl font-extrabold capitalize leading-tight drop-shadow-lg">
                       {item.name}
                     </h2>
-
-                    <p className="mt-2 leading-snug drop-shadow-md">
+                    <p className="mt-2 text-sm leading-snug drop-shadow-md opacity-90">
                       {item.description}
                     </p>
                   </div>
-
-                  {/* WHOLE CARD TILT EFFECT */}
-                  <div
-                    className="
-          absolute inset-0 z-50
-          group-hover:rotate-x-6 group-hover:rotate-y-3 group-hover:scale-[1.03]
-          transition-transform duration-700 ease-out transform-gpu
-          pointer-events-none
-        "
-                  ></div>
-
-                  {/* SHADOW */}
-                  <div
-                    className="
-          absolute inset-0 rounded-xl
-          group-hover:shadow-2xl group-hover:shadow-black/50
-          transition-shadow duration-700
-          pointer-events-none
-        "
-                  ></div>
                 </div>
               </Link>
             </SwiperSlide>
