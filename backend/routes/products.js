@@ -3,6 +3,9 @@ const router = express.Router();
 const Product = require('../models/Product');
 const Collection = require('../models/Collection');
 const authMiddleware = require('../middleware/authMiddleware');
+const axios = require('axios');
+const Papa = require('papaparse');
+const XLSX = require('xlsx');
 
 // Helper function to generate unique product code
 const generateProductCode = async () => {
@@ -381,16 +384,30 @@ router.delete('/:id/images/:imageId', authMiddleware, async (req, res) => {
     }
 });
 
-// Delete product
+// Delete product (SOFT DELETE - marks as inactive)
 router.delete('/:id', authMiddleware, async (req, res) => {
     try {
-        const product = await Product.findByIdAndDelete(req.params.id);
+        const { hardDelete } = req.query;
         
-        if (!product) {
-            return res.status(404).json({ message: 'Product not found' });
+        if (hardDelete === 'true') {
+            // Hard delete - permanently remove
+            const product = await Product.findByIdAndDelete(req.params.id);
+            if (!product) {
+                return res.status(404).json({ message: 'Product not found' });
+            }
+            res.json({ message: 'Product permanently deleted' });
+        } else {
+            // Soft delete - mark as inactive
+            const product = await Product.findByIdAndUpdate(
+                req.params.id,
+                { status: 'inactive', updatedAt: Date.now() },
+                { new: true }
+            );
+            if (!product) {
+                return res.status(404).json({ message: 'Product not found' });
+            }
+            res.json({ message: 'Product deactivated successfully', product });
         }
-        
-        res.json({ message: 'Product deleted successfully' });
     } catch (err) {
         console.error('Error deleting product:', err);
         res.status(500).json({ message: 'Server error' });
@@ -414,6 +431,242 @@ router.put('/bulk/order', authMiddleware, async (req, res) => {
     } catch (err) {
         console.error('Error updating order:', err);
         res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Import products from CSV/Excel URL
+router.post('/import-from-url', authMiddleware, async (req, res) => {
+    try {
+        const { fileUrl, collectionId, collectionName } = req.body;
+        
+        if (!fileUrl) {
+            return res.status(400).json({ message: 'File URL is required' });
+        }
+        
+        console.log('Importing from URL:', fileUrl);
+        console.log('Collection:', collectionId, collectionName);
+        
+        // Fetch the file from URL
+        const response = await axios.get(fileUrl, {
+            responseType: 'arraybuffer',
+            timeout: 30000
+        });
+        
+        let rows = [];
+        const fileExtension = fileUrl.split('.').pop().toLowerCase().split('?')[0];
+        
+        if (fileExtension === 'csv') {
+            // Parse CSV
+            const csvText = Buffer.from(response.data).toString('utf-8');
+            const parsed = Papa.parse(csvText, {
+                header: true,
+                skipEmptyLines: true,
+                transformHeader: (header) => header.trim().toLowerCase()
+            });
+            rows = parsed.data;
+        } else if (['xlsx', 'xls'].includes(fileExtension)) {
+            // Parse Excel
+            const workbook = XLSX.read(response.data, { type: 'buffer' });
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+            rows = XLSX.utils.sheet_to_json(worksheet, { 
+                defval: '',
+                raw: false 
+            });
+            // Normalize headers to lowercase
+            rows = rows.map(row => {
+                const normalized = {};
+                Object.keys(row).forEach(key => {
+                    normalized[key.toLowerCase().trim()] = row[key];
+                });
+                return normalized;
+            });
+        } else {
+            return res.status(400).json({ message: 'Unsupported file format. Use CSV or XLSX.' });
+        }
+        
+        console.log('Parsed rows:', rows.length);
+        
+        // Map column names to product fields
+        const columnMapping = {
+            'code': ['code', 'product code', 'sku', 'productcode'],
+            'name': ['name', 'product name', 'title', 'productname'],
+            'color': ['color', 'colour'],
+            'origin': ['origin', 'country', 'source'],
+            'isBookmatch': ['is bookmatch', 'bookmatch', 'isbookmatch', 'is_bookmatch'],
+            'isTranslucent': ['is translucent', 'translucent', 'istranslucent', 'is_translucent'],
+            'isNatural': ['is natural', 'natural', 'isnatural', 'is_natural'],
+            'description': ['description', 'desc'],
+            'grade': ['grade'],
+        };
+        
+        const getFieldValue = (row, field) => {
+            const possibleKeys = columnMapping[field] || [field.toLowerCase()];
+            for (const key of possibleKeys) {
+                if (row[key] !== undefined && row[key] !== '') {
+                    return row[key];
+                }
+            }
+            return '';
+        };
+        
+        const parseBoolean = (value) => {
+            if (!value) return false;
+            const str = String(value).toLowerCase().trim();
+            return ['yes', 'true', '1', 'y'].includes(str);
+        };
+        
+        // Process and insert products
+        let successCount = 0;
+        let errorCount = 0;
+        let skippedCount = 0;
+        const errors = [];
+        
+        for (const row of rows) {
+            try {
+                const name = getFieldValue(row, 'name');
+                if (!name || name.trim() === '') {
+                    skippedCount++;
+                    continue;
+                }
+                
+                let code = getFieldValue(row, 'code');
+                
+                // Check for duplicate code
+                if (code) {
+                    const existingProduct = await Product.findOne({ code: code });
+                    if (existingProduct) {
+                        errors.push(`Duplicate code: ${code} (${name})`);
+                        errorCount++;
+                        continue;
+                    }
+                } else {
+                    // Auto-generate code
+                    code = await generateProductCode();
+                }
+                
+                const productData = {
+                    code,
+                    name: name.trim(),
+                    color: getFieldValue(row, 'color'),
+                    origin: getFieldValue(row, 'origin'),
+                    isBookmatch: parseBoolean(getFieldValue(row, 'isBookmatch')),
+                    isTranslucent: parseBoolean(getFieldValue(row, 'isTranslucent')),
+                    isNatural: getFieldValue(row, 'isNatural') === '' ? true : parseBoolean(getFieldValue(row, 'isNatural')),
+                    description: getFieldValue(row, 'description'),
+                    grade: getFieldValue(row, 'grade'),
+                    collectionId: collectionId || null,
+                    collectionName: collectionName || 'Natural Stone Collections by SABTA GRANITE',
+                    category: collectionName || 'General',
+                    status: 'active',
+                    images: [],
+                    productImages: []
+                };
+                
+                const newProduct = new Product(productData);
+                await newProduct.save();
+                successCount++;
+            } catch (err) {
+                console.error('Error importing row:', err.message);
+                errors.push(err.message);
+                errorCount++;
+            }
+        }
+        
+        res.json({
+            message: 'Import completed',
+            success: successCount,
+            failed: errorCount,
+            skipped: skippedCount,
+            total: rows.length,
+            errors: errors.slice(0, 10) // Return first 10 errors
+        });
+        
+    } catch (err) {
+        console.error('Error importing from URL:', err);
+        
+        if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND') {
+            return res.status(400).json({ message: 'Could not fetch file from URL. Please check the URL.' });
+        }
+        if (err.response && err.response.status === 404) {
+            return res.status(400).json({ message: 'File not found at the provided URL.' });
+        }
+        
+        res.status(500).json({ message: 'Error importing file: ' + err.message });
+    }
+});
+
+// Get import preview from URL (validates file before import)
+router.post('/import-preview', authMiddleware, async (req, res) => {
+    try {
+        const { fileUrl } = req.body;
+        
+        if (!fileUrl) {
+            return res.status(400).json({ message: 'File URL is required' });
+        }
+        
+        // Fetch the file from URL
+        const response = await axios.get(fileUrl, {
+            responseType: 'arraybuffer',
+            timeout: 30000
+        });
+        
+        let rows = [];
+        const fileExtension = fileUrl.split('.').pop().toLowerCase().split('?')[0];
+        
+        if (fileExtension === 'csv') {
+            const csvText = Buffer.from(response.data).toString('utf-8');
+            const parsed = Papa.parse(csvText, {
+                header: true,
+                skipEmptyLines: true,
+                transformHeader: (header) => header.trim().toLowerCase()
+            });
+            rows = parsed.data;
+        } else if (['xlsx', 'xls'].includes(fileExtension)) {
+            const workbook = XLSX.read(response.data, { type: 'buffer' });
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+            rows = XLSX.utils.sheet_to_json(worksheet, { defval: '', raw: false });
+            rows = rows.map(row => {
+                const normalized = {};
+                Object.keys(row).forEach(key => {
+                    normalized[key.toLowerCase().trim()] = row[key];
+                });
+                return normalized;
+            });
+        } else {
+            return res.status(400).json({ message: 'Unsupported file format. Use CSV or XLSX.' });
+        }
+        
+        // Return preview of first 20 rows
+        const preview = rows.slice(0, 20).map((row, index) => ({
+            rowNum: index + 1,
+            code: row.code || row['product code'] || row.sku || '',
+            name: row.name || row['product name'] || row.title || '',
+            color: row.color || row.colour || '',
+            origin: row.origin || row.country || '',
+            isBookmatch: row['is bookmatch'] || row.bookmatch || row.isbookmatch || 'No',
+            isTranslucent: row['is translucent'] || row.translucent || row.istranslucent || 'No',
+            isNatural: row['is natural'] || row.natural || row.isnatural || 'Yes',
+        }));
+        
+        res.json({
+            totalRows: rows.length,
+            headers: rows.length > 0 ? Object.keys(rows[0]) : [],
+            preview
+        });
+        
+    } catch (err) {
+        console.error('Error previewing import:', err);
+        
+        if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND') {
+            return res.status(400).json({ message: 'Could not fetch file from URL. Please check the URL.' });
+        }
+        if (err.response && err.response.status === 404) {
+            return res.status(400).json({ message: 'File not found at the provided URL.' });
+        }
+        
+        res.status(500).json({ message: 'Error reading file: ' + err.message });
     }
 });
 

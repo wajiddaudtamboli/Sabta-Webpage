@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import api from '../../api/api';
-import { HiEye, HiPencil, HiTrash, HiDotsVertical, HiPlay, HiPause, HiFolder, HiUpload, HiPlus, HiX, HiCheck, HiPhotograph } from 'react-icons/hi';
+import { HiEye, HiPencil, HiTrash, HiDotsVertical, HiPlay, HiPause, HiFolder, HiUpload, HiPlus, HiX, HiCheck, HiPhotograph, HiLink, HiDownload } from 'react-icons/hi';
 
 const Products = () => {
     // Collections state - now from database
@@ -41,6 +41,12 @@ const Products = () => {
     const excelInputRef = useRef(null);
     const [importPreview, setImportPreview] = useState([]);
     const [showImportPreview, setShowImportPreview] = useState(false);
+    
+    // URL Import Modal State
+    const [showUrlImportModal, setShowUrlImportModal] = useState(false);
+    const [importFileUrl, setImportFileUrl] = useState('');
+    const [urlImportPreview, setUrlImportPreview] = useState(null);
+    const [importLoading, setImportLoading] = useState(false);
     
     // Dropdown menu state
     const [openMenuId, setOpenMenuId] = useState(null);
@@ -565,6 +571,60 @@ const Products = () => {
         fetchProducts(selectedCollection._id, selectedCollection.name);
     };
 
+    // Handle URL-based import preview
+    const handleUrlImportPreview = async () => {
+        if (!importFileUrl.trim()) {
+            showToast('Please enter a valid file URL', 'error');
+            return;
+        }
+        
+        setImportLoading(true);
+        try {
+            const response = await api.post('/products/import-preview', { fileUrl: importFileUrl });
+            setUrlImportPreview(response.data);
+            showToast(`Found ${response.data.totalRows} rows to import`);
+        } catch (error) {
+            console.error('Error previewing import:', error);
+            showToast(error.response?.data?.message || 'Error loading file from URL', 'error');
+        } finally {
+            setImportLoading(false);
+        }
+    };
+
+    // Confirm URL-based import
+    const confirmUrlImport = async () => {
+        if (!selectedCollection) {
+            showToast('Please select a collection first before importing products', 'error');
+            return;
+        }
+        
+        setImportLoading(true);
+        try {
+            const response = await api.post('/products/import-from-url', {
+                fileUrl: importFileUrl,
+                collectionId: selectedCollection._id,
+                collectionName: selectedCollection.name
+            });
+            
+            showToast(`Import complete! Success: ${response.data.success}, Failed: ${response.data.failed}`);
+            
+            // Reset and close modal
+            setShowUrlImportModal(false);
+            setImportFileUrl('');
+            setUrlImportPreview(null);
+            
+            // Refresh products and collections
+            fetchProducts(selectedCollection._id, selectedCollection.name);
+            fetchCollections();
+            
+        } catch (error) {
+            console.error('Error importing:', error);
+            showToast(error.response?.data?.message || 'Error importing products', 'error');
+        } finally {
+            setImportLoading(false);
+        }
+    };
+
     // Image carousel navigation
     const prevImage = () => {
         setCurrentImageIndex(prev => (prev > 0 ? prev - 1 : productImages.length - 1));
@@ -761,6 +821,136 @@ const Products = () => {
                 </div>
             )}
 
+            {/* URL Import Modal */}
+            {showUrlImportModal && (
+                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50" onClick={() => setShowUrlImportModal(false)}>
+                    <div className="bg-[#1a1a1a] rounded-lg p-6 w-full max-w-2xl border border-gray-700 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-xl font-semibold text-[#d4a853]">
+                                <HiLink className="inline w-6 h-6 mr-2" />
+                                Import Products from URL
+                            </h3>
+                            <button onClick={() => { setShowUrlImportModal(false); setUrlImportPreview(null); setImportFileUrl(''); }} className="text-gray-400 hover:text-white">
+                                <HiX className="w-6 h-6" />
+                            </button>
+                        </div>
+                        
+                        {/* Target Collection Display */}
+                        {selectedCollection ? (
+                            <div className="mb-4 p-3 bg-[#2a2a2a] rounded border border-[#d4a853]/30">
+                                <span className="text-gray-400 text-sm">Importing to: </span>
+                                <span className="text-[#d4a853] font-medium">{selectedCollection.name}</span>
+                            </div>
+                        ) : (
+                            <div className="mb-4 p-3 bg-red-900/20 rounded border border-red-500/30">
+                                <span className="text-red-400 text-sm">⚠️ Please select a collection first before importing</span>
+                            </div>
+                        )}
+                        
+                        {/* URL Input */}
+                        <div className="mb-4">
+                            <label className="block text-sm mb-2 text-gray-300">CSV / Excel File URL</label>
+                            <div className="flex gap-2">
+                                <input
+                                    type="text"
+                                    value={importFileUrl}
+                                    onChange={(e) => setImportFileUrl(e.target.value)}
+                                    placeholder="https://example.com/products.csv"
+                                    className="flex-1 bg-[#2a2a2a] border border-gray-600 rounded px-3 py-2 text-white"
+                                    disabled={importLoading}
+                                />
+                                <button
+                                    onClick={handleUrlImportPreview}
+                                    disabled={importLoading || !importFileUrl.trim()}
+                                    className="bg-[#d4a853] text-black px-4 py-2 rounded font-medium hover:bg-[#c49743] disabled:opacity-50 cursor-pointer flex items-center gap-2"
+                                >
+                                    {importLoading ? (
+                                        <span className="animate-spin">⏳</span>
+                                    ) : (
+                                        <HiDownload className="w-5 h-5" />
+                                    )}
+                                    Preview
+                                </button>
+                            </div>
+                            <p className="text-xs text-gray-500 mt-1">Supported formats: CSV, XLSX, XLS</p>
+                        </div>
+                        
+                        {/* Expected Columns Info */}
+                        <div className="mb-4 p-3 bg-[#2a2a2a] rounded border border-gray-600">
+                            <h4 className="text-sm font-medium text-[#d4a853] mb-2">Expected Columns:</h4>
+                            <div className="flex flex-wrap gap-2 text-xs">
+                                <span className="bg-gray-700 px-2 py-1 rounded">Code</span>
+                                <span className="bg-gray-700 px-2 py-1 rounded">Product Name *</span>
+                                <span className="bg-gray-700 px-2 py-1 rounded">Color</span>
+                                <span className="bg-gray-700 px-2 py-1 rounded">Origin</span>
+                                <span className="bg-gray-700 px-2 py-1 rounded">Is Bookmatch</span>
+                                <span className="bg-gray-700 px-2 py-1 rounded">Is Translucent</span>
+                                <span className="bg-gray-700 px-2 py-1 rounded">Is Natural</span>
+                            </div>
+                        </div>
+                        
+                        {/* Preview Table */}
+                        {urlImportPreview && (
+                            <div className="mb-4">
+                                <h4 className="text-sm font-medium text-gray-300 mb-2">
+                                    Preview ({urlImportPreview.totalRows} rows found)
+                                </h4>
+                                <div className="overflow-x-auto max-h-64 border border-gray-600 rounded">
+                                    <table className="w-full text-xs">
+                                        <thead className="bg-[#2a2a2a] sticky top-0">
+                                            <tr>
+                                                <th className="p-2 text-left">#</th>
+                                                <th className="p-2 text-left">Code</th>
+                                                <th className="p-2 text-left">Name</th>
+                                                <th className="p-2 text-left">Color</th>
+                                                <th className="p-2 text-left">Origin</th>
+                                                <th className="p-2 text-left">Bookmatch</th>
+                                                <th className="p-2 text-left">Translucent</th>
+                                                <th className="p-2 text-left">Natural</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {urlImportPreview.preview.map((row, idx) => (
+                                                <tr key={idx} className="border-t border-gray-700">
+                                                    <td className="p-2">{row.rowNum}</td>
+                                                    <td className="p-2 text-[#d4a853]">{row.code || 'Auto'}</td>
+                                                    <td className="p-2">{row.name || <span className="text-red-400">Missing</span>}</td>
+                                                    <td className="p-2">{row.color || '-'}</td>
+                                                    <td className="p-2">{row.origin || '-'}</td>
+                                                    <td className="p-2">{row.isBookmatch}</td>
+                                                    <td className="p-2">{row.isTranslucent}</td>
+                                                    <td className="p-2">{row.isNatural}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                {urlImportPreview.totalRows > 20 && (
+                                    <p className="text-xs text-gray-500 mt-1">Showing first 20 of {urlImportPreview.totalRows} rows</p>
+                                )}
+                            </div>
+                        )}
+                        
+                        {/* Action Buttons */}
+                        <div className="flex gap-3 mt-6">
+                            <button
+                                onClick={confirmUrlImport}
+                                disabled={importLoading || !urlImportPreview || !selectedCollection}
+                                className="flex-1 bg-[#d4a853] text-black py-2 rounded font-medium hover:bg-[#c49743] disabled:opacity-50 cursor-pointer"
+                            >
+                                {importLoading ? 'Importing...' : `Import ${urlImportPreview?.totalRows || 0} Products`}
+                            </button>
+                            <button
+                                onClick={() => { setShowUrlImportModal(false); setUrlImportPreview(null); setImportFileUrl(''); }}
+                                className="flex-1 bg-gray-700 text-white py-2 rounded font-medium hover:bg-gray-600 cursor-pointer"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Page Header with Add Product Button */}
             <div className="flex items-center justify-between mb-6">
                 <h1 className="text-2xl font-bold text-white">Products Management</h1>
@@ -779,10 +969,10 @@ const Products = () => {
                         <HiPlus className="w-5 h-5" /> Add Product
                     </button>
                     <button
-                        onClick={() => excelInputRef.current?.click()}
+                        onClick={() => setShowUrlImportModal(true)}
                         className="bg-gray-700 text-white px-4 py-2 rounded font-medium hover:bg-gray-600 cursor-pointer flex items-center gap-2"
                     >
-                        <HiUpload className="w-5 h-5" /> Import CSV
+                        <HiLink className="w-5 h-5" /> Import from URL
                     </button>
                 </div>
             </div>
@@ -910,6 +1100,9 @@ const Products = () => {
                                     <th className="p-3 text-left">Product Name</th>
                                     <th className="p-3 text-left">Color</th>
                                     <th className="p-3 text-left">Origin</th>
+                                    <th className="p-3 text-left">Is Bookmatch</th>
+                                    <th className="p-3 text-left">Is Translucent</th>
+                                    <th className="p-3 text-left">Is Natural</th>
                                     <th className="p-3 text-left">Status</th>
                                     <th className="p-3 text-left">Actions</th>
                                 </tr>
@@ -935,6 +1128,21 @@ const Products = () => {
                                         <td className="p-3 font-medium">{product.name}</td>
                                         <td className="p-3">{product.color || '-'}</td>
                                         <td className="p-3">{product.origin || '-'}</td>
+                                        <td className="p-3">
+                                            <span className={product.isBookmatch ? 'text-green-400' : 'text-gray-500'}>
+                                                {product.isBookmatch ? 'Yes' : 'No'}
+                                            </span>
+                                        </td>
+                                        <td className="p-3">
+                                            <span className={product.isTranslucent ? 'text-green-400' : 'text-gray-500'}>
+                                                {product.isTranslucent ? 'Yes' : 'No'}
+                                            </span>
+                                        </td>
+                                        <td className="p-3">
+                                            <span className={product.isNatural ? 'text-green-400' : 'text-gray-500'}>
+                                                {product.isNatural ? 'Yes' : 'No'}
+                                            </span>
+                                        </td>
                                         <td className="p-3">
                                             <span className={`px-2 py-1 rounded text-xs ${product.status === 'active' ? 'bg-green-600' : 'bg-gray-600'}`}>
                                                 {product.status || 'active'}
@@ -1361,6 +1569,23 @@ const Products = () => {
                     </div>
                 </div>
             )}
+
+            {/* Hidden file inputs */}
+            <input
+                type="file"
+                ref={imageInputRef}
+                onChange={handleImageUpload}
+                accept="image/*"
+                className="hidden"
+                multiple
+            />
+            <input
+                type="file"
+                ref={excelInputRef}
+                onChange={handleExcelImport}
+                accept=".csv,.xlsx,.xls"
+                className="hidden"
+            />
         </div>
     );
 };

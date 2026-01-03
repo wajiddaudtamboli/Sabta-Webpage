@@ -136,9 +136,10 @@ router.put('/:id', authMiddleware, async (req, res) => {
     }
 });
 
-// Delete collection (restrict if products exist)
+// Delete collection (SOFT DELETE or restrict if products exist)
 router.delete('/:id', authMiddleware, async (req, res) => {
     try {
+        const { hardDelete } = req.query;
         const collection = await Collection.findById(req.params.id);
         if (!collection) {
             return res.status(404).json({ message: 'Collection not found' });
@@ -158,14 +159,25 @@ router.delete('/:id', authMiddleware, async (req, res) => {
             ]
         });
         
-        if (productCount > 0) {
-            return res.status(400).json({ 
-                message: `Cannot delete collection "${collection.name}" - it has ${productCount} products. Move or delete products first.` 
+        if (productCount > 0 && hardDelete !== 'true') {
+            // Soft delete - deactivate instead of delete
+            collection.status = 'inactive';
+            await collection.save();
+            return res.json({ 
+                message: `Collection "${collection.name}" deactivated (has ${productCount} products)`,
+                softDeleted: true 
             });
         }
         
-        await Collection.findByIdAndDelete(req.params.id);
-        res.json({ message: 'Collection deleted successfully' });
+        if (hardDelete === 'true') {
+            await Collection.findByIdAndDelete(req.params.id);
+            res.json({ message: 'Collection permanently deleted' });
+        } else {
+            // Soft delete by setting status to inactive
+            collection.status = 'inactive';
+            await collection.save();
+            res.json({ message: 'Collection deactivated successfully' });
+        }
     } catch (err) {
         console.error('Error deleting collection:', err);
         res.status(500).json({ message: 'Server error' });
