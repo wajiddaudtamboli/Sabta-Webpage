@@ -33,10 +33,6 @@ const Products = () => {
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [newImageUrl, setNewImageUrl] = useState('');
     
-    // Image upload ref
-    const imageInputRef = useRef(null);
-    const collectionImageRef = useRef(null);
-    
     // Excel import refs and state
     const excelInputRef = useRef(null);
     const [importPreview, setImportPreview] = useState([]);
@@ -400,52 +396,6 @@ const Products = () => {
         });
         setProductImages([]);
         setCurrentImageIndex(0);
-    };
-
-    // Handle image upload from device
-    const handleImageUpload = async (e) => {
-        const files = e.target.files;
-        if (!files || files.length === 0) return;
-        
-        setLoading(true);
-        console.log('Starting image upload...', files.length, 'files');
-        
-        try {
-            const uploadedImages = [];
-            
-            for (let i = 0; i < files.length; i++) {
-                const file = files[i];
-                console.log('Uploading file:', file.name, 'Size:', file.size);
-                
-                const uploadFormData = new FormData();
-                uploadFormData.append('file', file);
-                
-                const response = await api.post('/media/upload', uploadFormData, {
-                    headers: { 'Content-Type': 'multipart/form-data' }
-                });
-                
-                console.log('Upload response:', response.data);
-                
-                if (response.data.url) {
-                    uploadedImages.push(response.data.url);
-                    setProductImages(prev => [...prev, response.data.url]);
-                }
-            }
-            
-            alert(`Successfully uploaded ${uploadedImages.length} image(s)!`);
-            console.log('All images uploaded successfully');
-        } catch (error) {
-            console.error('Error uploading image:', error);
-            console.error('Error response:', error.response?.data);
-            const errorMsg = error.response?.data?.message || error.message || 'Unknown error occurred';
-            alert(`Failed to upload image: ${errorMsg}\n\nPlease check your internet connection and try again.`);
-        } finally {
-            setLoading(false);
-            // Reset file input
-            if (imageInputRef.current) {
-                imageInputRef.current.value = '';
-            }
-        }
     };
 
     // Handle adding image by URL
@@ -1272,8 +1222,28 @@ const Products = () => {
                         {/* Action Buttons */}
                         <div className="flex justify-center gap-2 mb-8">
                             <ActionButton onClick={() => { setSelectedProduct(null); resetForm(); }}>Add</ActionButton>
-                            <ActionButton onClick={() => imageInputRef.current?.click()}>Upload Image</ActionButton>
                             <ActionButton onClick={handleSave}>Save</ActionButton>
+                        </div>
+
+                        {/* Add Image by URL - Inline */}
+                        <div className="mb-6 p-4 bg-[#2a2a2a] rounded border border-[#d4a853]/30">
+                            <h5 className="text-sm text-[#d4a853] mb-2 flex items-center gap-2"><HiLink className="w-4 h-4" /> Add Image by URL</h5>
+                            <div className="flex gap-2">
+                                <input
+                                    type="text"
+                                    value={newImageUrl}
+                                    onChange={(e) => setNewImageUrl(e.target.value)}
+                                    placeholder="https://example.com/image.jpg"
+                                    className="flex-1 bg-[#1a1a1a] border border-gray-600 rounded px-3 py-2 text-white"
+                                    onKeyPress={(e) => e.key === 'Enter' && handleAddImageUrl()}
+                                />
+                                <button
+                                    onClick={handleAddImageUrl}
+                                    className="bg-[#d4a853] text-black px-4 py-2 rounded font-medium hover:bg-[#c49743] cursor-pointer flex items-center gap-2"
+                                >
+                                    <HiPlus className="w-4 h-4" /> Add Image
+                                </button>
+                            </div>
                         </div>
 
                         {/* Basic Product Properties */}
@@ -1454,7 +1424,6 @@ const Products = () => {
                         {/* Action Buttons */}
                         <div className="flex justify-start gap-2 mb-8">
                             <ActionButton onClick={() => { setSelectedProduct(null); resetForm(); }}>Add</ActionButton>
-                            <ActionButton onClick={() => imageInputRef.current?.click()}>Edit</ActionButton>
                             <ActionButton onClick={handleSave}>Save</ActionButton>
                         </div>
 
@@ -1487,7 +1456,6 @@ const Products = () => {
                         {/* Action Buttons */}
                         <div className="flex justify-center gap-2 mb-8">
                             <ActionButton onClick={() => { setSelectedProduct(null); resetForm(); }}>Add</ActionButton>
-                            <ActionButton onClick={() => imageInputRef.current?.click()}>Edit</ActionButton>
                             <ActionButton onClick={handleSave}>Save</ActionButton>
                         </div>
 
@@ -1570,15 +1538,7 @@ const Products = () => {
                 </div>
             )}
 
-            {/* Hidden file inputs */}
-            <input
-                type="file"
-                ref={imageInputRef}
-                onChange={handleImageUpload}
-                accept="image/*"
-                className="hidden"
-                multiple
-            />
+            {/* Hidden file input for Excel/CSV import only */}
             <input
                 type="file"
                 ref={excelInputRef}
