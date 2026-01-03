@@ -242,3 +242,40 @@ body:not(:has(.admin-panel)) label {
 .shine-loop {
   animation: shine 3s linear infinite;
 }
+
+/* ✅ Premium Collection Tiles - Right-bent Effect */
+.collection-tile-wrapper {
+  perspective: 1200px;
+}
+
+.collection-tile {
+  transform: rotateY(-4deg) rotateZ(-1deg);
+  transform-style: preserve-3d;
+  box-shadow: 8px 12px 24px rgba(0,0,0,0.3), -2px -2px 8px rgba(255,255,255,0.05);
+  transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.collection-tile:hover {
+  transform: rotateY(0deg) rotateZ(0deg) translateY(-8px);
+  box-shadow: 12px 20px 40px rgba(0,0,0,0.4), -4px -4px 12px rgba(212,168,83,0.1);
+}
+
+/* Mobile: Reduce tilt effect for better usability */
+@media (max-width: 768px) {
+  .collection-tile {
+    transform: rotateY(-2deg) rotateZ(-0.5deg);
+    box-shadow: 4px 8px 16px rgba(0,0,0,0.25);
+  }
+  
+  .collection-tile:hover {
+    transform: rotateY(0deg) rotateZ(0deg) translateY(-4px);
+    box-shadow: 8px 12px 24px rgba(0,0,0,0.35);
+  }
+}
+
+/* Very small screens: Minimal tilt */
+@media (max-width: 480px) {
+  .collection-tile {
+    transform: rotateY(-1deg) rotateZ(-0.25deg);
+  }
+}

@@ -127,37 +127,53 @@ const Collections = () => {
         className="w-full px-6 sm:px-10 md:px-16 lg:px-24 py-16"
         data-aos="fade-up"
       >
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-10">
+        {/* Premium Tile Grid with Perspective */}
+        <div 
+          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-8 md:gap-10"
+          style={{ perspective: '1200px' }}
+        >
           {collections.map((cat, index) => (
             <Link
               key={cat._id || index}
               to={`/collections/${cat.slug || cat.name.toLowerCase().replace(/\s+/g, "-")}`}
+              className="block"
             >
+              {/* Premium Tilted Card Container */}
               <div
-                className={`
-                  relative h-72 sm:h-96 md:h-108
-                  rounded-xl overflow-hidden
-                  group cursor-pointer
-                  shadow-md hover:shadow-xl transition-all duration-300
-                  ${index === 0 ? 'lg:rotate-1 lg:hover:rotate-0' : ''}
-                `}
+                className="relative h-72 sm:h-96 md:h-[420px] rounded-xl overflow-hidden group cursor-pointer transition-all duration-500 ease-out"
+                style={{
+                  transform: 'rotateY(-4deg) rotateZ(-1deg)',
+                  transformStyle: 'preserve-3d',
+                  boxShadow: '8px 12px 24px rgba(0,0,0,0.3), -2px -2px 8px rgba(255,255,255,0.05)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'rotateY(0deg) rotateZ(0deg) translateY(-8px)';
+                  e.currentTarget.style.boxShadow = '12px 20px 40px rgba(0,0,0,0.4), -4px -4px 12px rgba(212,168,83,0.1)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'rotateY(-4deg) rotateZ(-1deg)';
+                  e.currentTarget.style.boxShadow = '8px 12px 24px rgba(0,0,0,0.3), -2px -2px 8px rgba(255,255,255,0.05)';
+                }}
               >
                 {/* Background Image */}
                 <img
                   src={cat.img || cat.image}
                   alt={cat.name}
-                  className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
                 />
 
-                {/* Black gradient overlay */}
-                <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/30 to-transparent"></div>
+                {/* Premium Gradient Overlay */}
+                <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent"></div>
+                
+                {/* Gold accent line at bottom */}
+                <div className="absolute bottom-0 left-0 right-0 h-1 bg-linear-to-r from-transparent via-[#d4a853] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
                 {/* Category Name */}
                 <div className="absolute bottom-6 left-6 right-6">
-                  <h3 className="text-white text-xl sm:text-2xl font-semibold drop-shadow-lg">
+                  <h3 className="text-white text-xl sm:text-2xl font-semibold drop-shadow-lg tracking-wide">
                     {cat.name}
                   </h3>
-                  <p className="text-white/80 text-sm mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <p className="text-[#d4a853] text-sm mt-2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
                     Explore Collection →
                   </p>
                 </div>
