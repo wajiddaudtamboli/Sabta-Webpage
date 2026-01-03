@@ -95,59 +95,65 @@ const Footer = () => {
           <div className="w-full h-px my-6 bg-linear-to-r from-transparent via-(--brand-accent) to-transparent sm:hidden"></div>
 
           {/* ---------- SOCIAL LINKS ---------- */}
-          {/* ---------- SOCIAL LINKS ---------- */}
-          {/* ---------- SOCIAL LINKS ---------- */}
           <div className="lg:w-1/3 md:pl-10">
             <h3 className="text-lg font-semibold mb-4">Follow Us</h3>
 
-            {/* ICONS + QR ROW */}
-            <div className="flex items-start justify-between gap-6">
-              {/* Social Icons */}
-              {/* ICONS + QR ROW */}
-<div className="flex items-start justify-between gap-6">
+            {/* Social Media Frame for Desktop */}
+            <div className="flex flex-col gap-6">
+              {/* Social Icons with Frame */}
+              <div className="flex items-center gap-4 p-3 bg-black/40 rounded-xl border border-[#d4a853]/30">
+                <a href="https://www.facebook.com/SGMT2003" target="_blank" rel="noopener noreferrer" className="w-10 h-10 flex items-center justify-center rounded-lg bg-[#d4a853]/10 hover:bg-[#d4a853]/30 text-[#d4a853] transition-all duration-300 hover:scale-110">
+                  <FaFacebookSquare size={22} />
+                </a>
 
-  {/* Social Icons */}
-  <div className="flex items-start gap-5 text-2xl">
-    <a href="https://www.facebook.com/SGMT2003" target="_blank" className="hover:opacity-70">
-      <FaFacebookSquare />
-    </a>
+                <a href="https://www.instagram.com/sabta_granite/" target="_blank" rel="noopener noreferrer" className="w-10 h-10 flex items-center justify-center rounded-lg bg-[#d4a853]/10 hover:bg-[#d4a853]/30 text-[#d4a853] transition-all duration-300 hover:scale-110">
+                  <FaInstagram size={22} />
+                </a>
 
-    <a href="https://www.instagram.com/sabta_granite/" target="_blank" className="hover:opacity-70">
-      <FaInstagram />
-    </a>
+                <a href="https://x.com/sgmt2003" target="_blank" rel="noopener noreferrer" className="w-10 h-10 flex items-center justify-center rounded-lg bg-[#d4a853]/10 hover:bg-[#d4a853]/30 text-[#d4a853] transition-all duration-300 hover:scale-110">
+                  <FaXTwitter size={22} />
+                </a>
 
-    <a href="https://x.com/sgmt2003" target="_blank" className="hover:opacity-70">
-      <FaXTwitter />
-    </a>
+                <a href="https://www.pinterest.com/sabta_granite/" target="_blank" rel="noopener noreferrer" className="w-10 h-10 flex items-center justify-center rounded-lg bg-[#d4a853]/10 hover:bg-[#d4a853]/30 text-[#d4a853] transition-all duration-300 hover:scale-110">
+                  <FaPinterest size={22} />
+                </a>
 
-    <a href="https://www.pinterest.com/sabta_granite/" target="_blank" className="hover:opacity-70">
-      <FaPinterest />
-    </a>
+                <a href="https://www.linkedin.com/in/sabta-granite-and-marbles-trading-10b325251/" target="_blank" rel="noopener noreferrer" className="w-10 h-10 flex items-center justify-center rounded-lg bg-[#d4a853]/10 hover:bg-[#d4a853]/30 text-[#d4a853] transition-all duration-300 hover:scale-110">
+                  <FaLinkedin size={22} />
+                </a>
+              </div>
 
-    <a href="https://www.linkedin.com/in/sabta-granite-and-marbles-trading-10b325251/" target="_blank" className="hover:opacity-70">
-      <FaLinkedin />
-    </a>
-  </div>
-
-  {/* QR CODE */}
-  <img
-    src={LocationQR}
-    alt="Location QR Code"
-    className="w-24 h-24 object-contain rounded-lg border border-(--brand-accent)"
-  />
-</div>
-
-
-              {/* QR CODE */}
-              
+              {/* Location QR Code with Label */}
+              <div className="flex items-center gap-4 p-3 bg-black/40 rounded-xl border border-[#d4a853]/30">
+                <div className="bg-white p-2 rounded-lg">
+                  <img
+                    src={LocationQR}
+                    alt="Scan for Location"
+                    className="w-20 h-20 object-contain"
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[#d4a853] font-semibold text-sm">Scan for Location</span>
+                  <span className="text-gray-400 text-xs">Open in Google Maps</span>
+                  <a 
+                    href="https://maps.app.goo.gl/kskRgHSwUrQmXKtX9" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-[#d4a853] text-xs mt-1 hover:underline flex items-center gap-1"
+                  >
+                    <FaLocationDot size={12} />
+                    View on Map
+                  </a>
+                </div>
+              </div>
             </div>
 
-            {/* SUBSCRIBE BOX — now below both */}
+            {/* SUBSCRIBE BOX */}
             <div
               className="
       w-full 
       bg-black/80 
-      border border-(--brand-accent) 
+      border border-[#d4a853] 
       rounded-lg 
       p-3 
       mt-6
