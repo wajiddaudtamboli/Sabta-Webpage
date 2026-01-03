@@ -124,57 +124,60 @@ const Collections = () => {
 
       {/* ✅ TILE GRID SECTION */}
       <section
-        className="w-full px-6 sm:px-10 md:px-16 lg:px-24 py-16"
+        className="w-full px-6 sm:px-10 md:px-16 lg:px-24 py-16 bg-[#1a1a1a]"
         data-aos="fade-up"
       >
-        {/* Premium Tile Grid with Perspective */}
+        {/* Premium Tile Grid with Perspective - Like Playing Cards */}
         <div 
-          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-8 md:gap-10"
-          style={{ perspective: '1200px' }}
+          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8"
+          style={{ perspective: '1500px' }}
         >
           {collections.map((cat, index) => (
             <Link
               key={cat._id || index}
               to={`/collections/${cat.slug || cat.name.toLowerCase().replace(/\s+/g, "-")}`}
-              className="block"
+              className="block group"
             >
-              {/* Premium Tilted Card Container */}
-              <div
-                className="relative h-72 sm:h-96 md:h-[420px] rounded-xl overflow-hidden group cursor-pointer transition-all duration-500 ease-out"
-                style={{
-                  transform: 'rotateY(-4deg) rotateZ(-1deg)',
-                  transformStyle: 'preserve-3d',
-                  boxShadow: '8px 12px 24px rgba(0,0,0,0.3), -2px -2px 8px rgba(255,255,255,0.05)'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'rotateY(0deg) rotateZ(0deg) translateY(-8px)';
-                  e.currentTarget.style.boxShadow = '12px 20px 40px rgba(0,0,0,0.4), -4px -4px 12px rgba(212,168,83,0.1)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'rotateY(-4deg) rotateZ(-1deg)';
-                  e.currentTarget.style.boxShadow = '8px 12px 24px rgba(0,0,0,0.3), -2px -2px 8px rgba(255,255,255,0.05)';
-                }}
-              >
-                {/* Background Image */}
-                <img
-                  src={cat.img || cat.image}
-                  alt={cat.name}
-                  className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
-                />
+              {/* Card + Title Container */}
+              <div className="flex flex-col items-center">
+                {/* Tilted Card - Playing Card Style */}
+                <div
+                  className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden cursor-pointer transition-all duration-500 ease-out"
+                  style={{
+                    transform: `perspective(1000px) rotateY(${index % 2 === 0 ? '-3' : '3'}deg) rotateX(2deg)`,
+                    transformStyle: 'preserve-3d',
+                    boxShadow: '0 20px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.1)'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'perspective(1000px) rotateY(0deg) rotateX(0deg) translateY(-12px) scale(1.02)';
+                    e.currentTarget.style.boxShadow = '0 30px 60px rgba(0,0,0,0.6), 0 0 20px rgba(212,168,83,0.2)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = `perspective(1000px) rotateY(${index % 2 === 0 ? '-3' : '3'}deg) rotateX(2deg)`;
+                    e.currentTarget.style.boxShadow = '0 20px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.1)';
+                  }}
+                >
+                  {/* Stone Image - Full Coverage */}
+                  <img
+                    src={cat.img || cat.image}
+                    alt={cat.name}
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                  />
+                  
+                  {/* Subtle Shine Effect on Hover */}
+                  <div className="absolute inset-0 bg-linear-to-br from-white/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                  
+                  {/* Card Border Glow on Hover */}
+                  <div className="absolute inset-0 rounded-2xl border-2 border-transparent group-hover:border-[#d4a853]/30 transition-all duration-500"></div>
+                </div>
 
-                {/* Premium Gradient Overlay */}
-                <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent"></div>
-                
-                {/* Gold accent line at bottom */}
-                <div className="absolute bottom-0 left-0 right-0 h-1 bg-linear-to-r from-transparent via-[#d4a853] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-
-                {/* Category Name */}
-                <div className="absolute bottom-6 left-6 right-6">
-                  <h3 className="text-white text-xl sm:text-2xl font-semibold drop-shadow-lg tracking-wide">
-                    {cat.name}
+                {/* Title Below Card - Centered */}
+                <div className="mt-4 text-center">
+                  <h3 className="text-white text-lg sm:text-xl font-bold uppercase tracking-wider">
+                    {cat.name.replace(' Series', '')}
                   </h3>
-                  <p className="text-[#d4a853] text-sm mt-2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
-                    Explore Collection →
+                  <p className="text-[#d4a853] text-xs sm:text-sm uppercase tracking-widest mt-1">
+                    Series
                   </p>
                 </div>
               </div>
