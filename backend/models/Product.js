@@ -17,6 +17,9 @@ const ProductSchema = new mongoose.Schema({
     collectionName: { type: String, default: 'Natural Stone Collections by SABTA GRANITE' },
     description: String,
     
+    // Primary product image (single image from device upload)
+    primaryImage: { type: String, default: '' },
+    
     // Legacy images array (simple strings) - kept for backward compatibility
     images: [String],
     

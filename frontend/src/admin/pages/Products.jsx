@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import api from '../../api/api';
-import { HiEye, HiPencil, HiTrash, HiDotsVertical, HiPlay, HiPause, HiFolder, HiUpload, HiPlus, HiX, HiCheck, HiPhotograph, HiLink, HiDownload } from 'react-icons/hi';
+import { HiEye, HiPencil, HiTrash, HiDotsVertical, HiPlay, HiPause, HiPlus, HiX, HiPhotograph, HiLink, HiUpload } from 'react-icons/hi';
 
 const Products = () => {
     // Collections state - now from database
@@ -28,21 +28,16 @@ const Products = () => {
     const [isEditing, setIsEditing] = useState(false);
     const [loading, setLoading] = useState(false);
     
-    // Product images state for carousel
+    // Product images state for carousel (multi-image with metadata)
     const [productImages, setProductImages] = useState([]);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [newImageUrl, setNewImageUrl] = useState('');
+    const [editingImageIndex, setEditingImageIndex] = useState(null);
+    const multiImageInputRef = useRef(null);
     
-    // Excel import refs and state
-    const excelInputRef = useRef(null);
-    const [importPreview, setImportPreview] = useState([]);
-    const [showImportPreview, setShowImportPreview] = useState(false);
-    
-    // URL Import Modal State
-    const [showUrlImportModal, setShowUrlImportModal] = useState(false);
-    const [importFileUrl, setImportFileUrl] = useState('');
-    const [urlImportPreview, setUrlImportPreview] = useState(null);
-    const [importLoading, setImportLoading] = useState(false);
+    // Primary image state (single image from device)
+    const [primaryImage, setPrimaryImage] = useState('');
+    const primaryImageInputRef = useRef(null);
     
     // Dropdown menu state
     const [openMenuId, setOpenMenuId] = useState(null);
@@ -288,8 +283,30 @@ const Products = () => {
             images: product.images || [],
             status: product.status || 'active'
         });
-        setProductImages(product.images || []);
+        // Use productImages if available (has metadata), otherwise convert from legacy images array
+        const productImagesData = product.productImages || [];
+        const legacyImages = product.images || [];
+        
+        let formattedImages = [];
+        if (productImagesData.length > 0) {
+            formattedImages = productImagesData.map((img, index) => ({
+                url: img.url || '',
+                description: img.description || `Image ${index + 1}`,
+                isNewArrival: img.isNewArrival || false
+            }));
+        } else if (legacyImages.length > 0) {
+            formattedImages = legacyImages.map((img, index) => {
+                if (typeof img === 'string') {
+                    return { url: img, description: `Image ${index + 1}`, isNewArrival: false };
+                }
+                return { url: img.url || '', description: img.description || `Image ${index + 1}`, isNewArrival: img.isNewArrival || false };
+            });
+        }
+        
+        setProductImages(formattedImages);
+        setPrimaryImage(product.primaryImage || '');
         setCurrentImageIndex(0);
+        setEditingImageIndex(null);
     };
 
     // Handle save product
@@ -307,6 +324,7 @@ const Products = () => {
                 collectionId: selectedCollection?._id,
                 collectionName: selectedCollection?.name || formData.collectionName,
                 images: productImages,
+                primaryImage: primaryImage,
                 category: selectedCollection?.name || formData.category || 'General'
             };
             
@@ -395,184 +413,115 @@ const Products = () => {
             status: 'active'
         });
         setProductImages([]);
+        setPrimaryImage('');
         setCurrentImageIndex(0);
+        setEditingImageIndex(null);
     };
 
     // Handle adding image by URL
     const handleAddImageUrl = () => {
+        // Only add if URL is provided, silently ignore empty input
         if (!newImageUrl.trim()) {
-            alert('Please enter a valid image URL');
             return;
         }
-        // Basic URL validation
-        if (!newImageUrl.match(/^https?:\/\/.+\.(jpg|jpeg|png|gif|webp|svg)/i) && !newImageUrl.startsWith('http')) {
-            if (!window.confirm('This URL may not be a valid image. Add anyway?')) {
-                return;
-            }
-        }
-        setProductImages(prev => [...prev, newImageUrl.trim()]);
+        const newImage = {
+            url: newImageUrl.trim(),
+            description: `Image ${productImages.length + 1}`,
+            isNewArrival: false
+        };
+        setProductImages(prev => [...prev, newImage]);
         setNewImageUrl('');
         showToast('Image URL added successfully');
+    };
+
+    // Handle multiple image selection from device
+    const handleMultiImageSelect = (e) => {
+        const files = Array.from(e.target.files || []);
+        if (files.length === 0) return;
+        
+        const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+        const validFiles = files.filter(file => validTypes.includes(file.type));
+        
+        if (validFiles.length === 0) {
+            showToast('Please select valid image files (JPG, PNG, or WEBP)', 'error');
+            return;
+        }
+        
+        // Process each file and convert to base64
+        const processFiles = validFiles.map((file, idx) => {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    resolve({
+                        url: event.target.result,
+                        description: file.name.replace(/\.[^/.]+$/, '') || `Image ${productImages.length + idx + 1}`,
+                        isNewArrival: false
+                    });
+                };
+                reader.onerror = () => resolve(null);
+                reader.readAsDataURL(file);
+            });
+        });
+        
+        Promise.all(processFiles).then(results => {
+            const newImages = results.filter(img => img !== null);
+            if (newImages.length > 0) {
+                setProductImages(prev => [...prev, ...newImages]);
+                showToast(`${newImages.length} image(s) added successfully`);
+            }
+        });
+        
+        // Reset file input
+        if (multiImageInputRef.current) {
+            multiImageInputRef.current.value = '';
+        }
+    };
+
+    // Handle updating image metadata
+    const handleUpdateImageMetadata = (index, field, value) => {
+        setProductImages(prev => prev.map((img, i) => 
+            i === index ? { ...img, [field]: value } : img
+        ));
+    };
+
+    // Handle primary image file selection from device
+    const handlePrimaryImageSelect = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        
+        // Validate file type
+        const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+        if (!validTypes.includes(file.type)) {
+            showToast('Please select a valid image file (JPG, PNG, or WEBP)', 'error');
+            return;
+        }
+        
+        // Convert to base64 for preview and storage
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            setPrimaryImage(event.target.result);
+            showToast('Primary image selected successfully');
+        };
+        reader.onerror = () => {
+            showToast('Error reading image file', 'error');
+        };
+        reader.readAsDataURL(file);
+        
+        // Reset file input
+        if (primaryImageInputRef.current) {
+            primaryImageInputRef.current.value = '';
+        }
     };
 
     // Handle image delete from list
     const handleDeleteImage = (index) => {
         if (!window.confirm('Delete this image?')) return;
         setProductImages(prev => prev.filter((_, i) => i !== index));
-    };
-
-    // Handle Excel/CSV file import
-    const handleExcelImport = async (e) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        
-        setLoading(true);
-        try {
-            const reader = new FileReader();
-            reader.onload = async (event) => {
-                const text = event.target.result;
-                const rows = text.split('\n').map(row => row.split(',').map(cell => cell.trim().replace(/^"|"$/g, '')));
-                
-                // First row is header
-                const headers = rows[0].map(h => h.toLowerCase());
-                const dataRows = rows.slice(1).filter(row => row.some(cell => cell));
-                
-                // Map columns to product fields
-                const columnMap = {
-                    'code': ['code', 'product code', 'sku'],
-                    'name': ['name', 'product name', 'title'],
-                    'color': ['color', 'colour'],
-                    'origin': ['origin', 'country'],
-                    'isBookmatch': ['is bookmatch', 'bookmatch', 'isbookmatch'],
-                    'isTranslucent': ['is translucent', 'translucent', 'istranslucent'],
-                    'isNatural': ['is natural', 'natural', 'isnatural'],
-                    'description': ['description', 'desc'],
-                    'grade': ['grade'],
-                };
-                
-                const findColumnIndex = (field) => {
-                    const possibleNames = columnMap[field] || [field.toLowerCase()];
-                    return headers.findIndex(h => possibleNames.some(n => h.includes(n)));
-                };
-                
-                const preview = dataRows.map((row, idx) => ({
-                    rowNum: idx + 1,
-                    code: row[findColumnIndex('code')] || '',
-                    name: row[findColumnIndex('name')] || '',
-                    color: row[findColumnIndex('color')] || '',
-                    origin: row[findColumnIndex('origin')] || '',
-                    isBookmatch: ['yes', 'true', '1'].includes((row[findColumnIndex('isBookmatch')] || '').toLowerCase()),
-                    isTranslucent: ['yes', 'true', '1'].includes((row[findColumnIndex('isTranslucent')] || '').toLowerCase()),
-                    isNatural: ['yes', 'true', '1', ''].includes((row[findColumnIndex('isNatural')] || 'yes').toLowerCase()),
-                    description: row[findColumnIndex('description')] || '',
-                    grade: row[findColumnIndex('grade')] || '',
-                })).filter(p => p.name); // Only include rows with a name
-                
-                setImportPreview(preview);
-                setShowImportPreview(true);
-                setLoading(false);
-            };
-            reader.readAsText(file);
-        } catch (error) {
-            console.error('Error reading file:', error);
-            alert('Error reading file: ' + error.message);
-            setLoading(false);
+        // Adjust current index if needed
+        if (currentImageIndex >= productImages.length - 1 && currentImageIndex > 0) {
+            setCurrentImageIndex(currentImageIndex - 1);
         }
-        
-        // Reset file input
-        if (excelInputRef.current) {
-            excelInputRef.current.value = '';
-        }
-    };
-    
-    // Confirm and save imported products
-    const confirmImport = async () => {
-        if (!selectedCollection) {
-            alert('Please select a collection first before importing products.');
-            return;
-        }
-        
-        setLoading(true);
-        let successCount = 0;
-        let errorCount = 0;
-        
-        for (const product of importPreview) {
-            try {
-                await api.post('/products', {
-                    ...product,
-                    collectionId: selectedCollection._id,
-                    collectionName: selectedCollection.name,
-                    category: selectedCollection.name,
-                    status: 'active',
-                    images: []
-                });
-                successCount++;
-            } catch (error) {
-                console.error('Error importing product:', product.name, error);
-                errorCount++;
-            }
-        }
-        
-        setLoading(false);
-        setShowImportPreview(false);
-        setImportPreview([]);
-        
-        alert(`Import complete!\nSuccessful: ${successCount}\nFailed: ${errorCount}`);
-        fetchProducts(selectedCollection._id, selectedCollection.name);
-    };
-
-    // Handle URL-based import preview
-    const handleUrlImportPreview = async () => {
-        if (!importFileUrl.trim()) {
-            showToast('Please enter a valid file URL', 'error');
-            return;
-        }
-        
-        setImportLoading(true);
-        try {
-            const response = await api.post('/products/import-preview', { fileUrl: importFileUrl });
-            setUrlImportPreview(response.data);
-            showToast(`Found ${response.data.totalRows} rows to import`);
-        } catch (error) {
-            console.error('Error previewing import:', error);
-            showToast(error.response?.data?.message || 'Error loading file from URL', 'error');
-        } finally {
-            setImportLoading(false);
-        }
-    };
-
-    // Confirm URL-based import
-    const confirmUrlImport = async () => {
-        if (!selectedCollection) {
-            showToast('Please select a collection first before importing products', 'error');
-            return;
-        }
-        
-        setImportLoading(true);
-        try {
-            const response = await api.post('/products/import-from-url', {
-                fileUrl: importFileUrl,
-                collectionId: selectedCollection._id,
-                collectionName: selectedCollection.name
-            });
-            
-            showToast(`Import complete! Success: ${response.data.success}, Failed: ${response.data.failed}`);
-            
-            // Reset and close modal
-            setShowUrlImportModal(false);
-            setImportFileUrl('');
-            setUrlImportPreview(null);
-            
-            // Refresh products and collections
-            fetchProducts(selectedCollection._id, selectedCollection.name);
-            fetchCollections();
-            
-        } catch (error) {
-            console.error('Error importing:', error);
-            showToast(error.response?.data?.message || 'Error importing products', 'error');
-        } finally {
-            setImportLoading(false);
-        }
+        setEditingImageIndex(null);
     };
 
     // Image carousel navigation
@@ -771,136 +720,6 @@ const Products = () => {
                 </div>
             )}
 
-            {/* URL Import Modal */}
-            {showUrlImportModal && (
-                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50" onClick={() => setShowUrlImportModal(false)}>
-                    <div className="bg-[#1a1a1a] rounded-lg p-6 w-full max-w-2xl border border-gray-700 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-xl font-semibold text-[#d4a853]">
-                                <HiLink className="inline w-6 h-6 mr-2" />
-                                Import Products from URL
-                            </h3>
-                            <button onClick={() => { setShowUrlImportModal(false); setUrlImportPreview(null); setImportFileUrl(''); }} className="text-gray-400 hover:text-white">
-                                <HiX className="w-6 h-6" />
-                            </button>
-                        </div>
-                        
-                        {/* Target Collection Display */}
-                        {selectedCollection ? (
-                            <div className="mb-4 p-3 bg-[#2a2a2a] rounded border border-[#d4a853]/30">
-                                <span className="text-gray-400 text-sm">Importing to: </span>
-                                <span className="text-[#d4a853] font-medium">{selectedCollection.name}</span>
-                            </div>
-                        ) : (
-                            <div className="mb-4 p-3 bg-red-900/20 rounded border border-red-500/30">
-                                <span className="text-red-400 text-sm">⚠️ Please select a collection first before importing</span>
-                            </div>
-                        )}
-                        
-                        {/* URL Input */}
-                        <div className="mb-4">
-                            <label className="block text-sm mb-2 text-gray-300">CSV / Excel File URL</label>
-                            <div className="flex gap-2">
-                                <input
-                                    type="text"
-                                    value={importFileUrl}
-                                    onChange={(e) => setImportFileUrl(e.target.value)}
-                                    placeholder="https://example.com/products.csv"
-                                    className="flex-1 bg-[#2a2a2a] border border-gray-600 rounded px-3 py-2 text-white"
-                                    disabled={importLoading}
-                                />
-                                <button
-                                    onClick={handleUrlImportPreview}
-                                    disabled={importLoading || !importFileUrl.trim()}
-                                    className="bg-[#d4a853] text-black px-4 py-2 rounded font-medium hover:bg-[#c49743] disabled:opacity-50 cursor-pointer flex items-center gap-2"
-                                >
-                                    {importLoading ? (
-                                        <span className="animate-spin">⏳</span>
-                                    ) : (
-                                        <HiDownload className="w-5 h-5" />
-                                    )}
-                                    Preview
-                                </button>
-                            </div>
-                            <p className="text-xs text-gray-500 mt-1">Supported formats: CSV, XLSX, XLS</p>
-                        </div>
-                        
-                        {/* Expected Columns Info */}
-                        <div className="mb-4 p-3 bg-[#2a2a2a] rounded border border-gray-600">
-                            <h4 className="text-sm font-medium text-[#d4a853] mb-2">Expected Columns:</h4>
-                            <div className="flex flex-wrap gap-2 text-xs">
-                                <span className="bg-gray-700 px-2 py-1 rounded">Code</span>
-                                <span className="bg-gray-700 px-2 py-1 rounded">Product Name *</span>
-                                <span className="bg-gray-700 px-2 py-1 rounded">Color</span>
-                                <span className="bg-gray-700 px-2 py-1 rounded">Origin</span>
-                                <span className="bg-gray-700 px-2 py-1 rounded">Is Bookmatch</span>
-                                <span className="bg-gray-700 px-2 py-1 rounded">Is Translucent</span>
-                                <span className="bg-gray-700 px-2 py-1 rounded">Is Natural</span>
-                            </div>
-                        </div>
-                        
-                        {/* Preview Table */}
-                        {urlImportPreview && (
-                            <div className="mb-4">
-                                <h4 className="text-sm font-medium text-gray-300 mb-2">
-                                    Preview ({urlImportPreview.totalRows} rows found)
-                                </h4>
-                                <div className="overflow-x-auto max-h-64 border border-gray-600 rounded">
-                                    <table className="w-full text-xs">
-                                        <thead className="bg-[#2a2a2a] sticky top-0">
-                                            <tr>
-                                                <th className="p-2 text-left">#</th>
-                                                <th className="p-2 text-left">Code</th>
-                                                <th className="p-2 text-left">Name</th>
-                                                <th className="p-2 text-left">Color</th>
-                                                <th className="p-2 text-left">Origin</th>
-                                                <th className="p-2 text-left">Bookmatch</th>
-                                                <th className="p-2 text-left">Translucent</th>
-                                                <th className="p-2 text-left">Natural</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {urlImportPreview.preview.map((row, idx) => (
-                                                <tr key={idx} className="border-t border-gray-700">
-                                                    <td className="p-2">{row.rowNum}</td>
-                                                    <td className="p-2 text-[#d4a853]">{row.code || 'Auto'}</td>
-                                                    <td className="p-2">{row.name || <span className="text-red-400">Missing</span>}</td>
-                                                    <td className="p-2">{row.color || '-'}</td>
-                                                    <td className="p-2">{row.origin || '-'}</td>
-                                                    <td className="p-2">{row.isBookmatch}</td>
-                                                    <td className="p-2">{row.isTranslucent}</td>
-                                                    <td className="p-2">{row.isNatural}</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                                {urlImportPreview.totalRows > 20 && (
-                                    <p className="text-xs text-gray-500 mt-1">Showing first 20 of {urlImportPreview.totalRows} rows</p>
-                                )}
-                            </div>
-                        )}
-                        
-                        {/* Action Buttons */}
-                        <div className="flex gap-3 mt-6">
-                            <button
-                                onClick={confirmUrlImport}
-                                disabled={importLoading || !urlImportPreview || !selectedCollection}
-                                className="flex-1 bg-[#d4a853] text-black py-2 rounded font-medium hover:bg-[#c49743] disabled:opacity-50 cursor-pointer"
-                            >
-                                {importLoading ? 'Importing...' : `Import ${urlImportPreview?.totalRows || 0} Products`}
-                            </button>
-                            <button
-                                onClick={() => { setShowUrlImportModal(false); setUrlImportPreview(null); setImportFileUrl(''); }}
-                                className="flex-1 bg-gray-700 text-white py-2 rounded font-medium hover:bg-gray-600 cursor-pointer"
-                            >
-                                Cancel
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
             {/* Page Header with Add Product Button */}
             <div className="flex items-center justify-between mb-6">
                 <h1 className="text-2xl font-bold text-white">Products Management</h1>
@@ -917,12 +736,6 @@ const Products = () => {
                         className="bg-[#d4a853] text-black px-4 py-2 rounded font-medium hover:bg-[#c49743] cursor-pointer flex items-center gap-2"
                     >
                         <HiPlus className="w-5 h-5" /> Add Product
-                    </button>
-                    <button
-                        onClick={() => setShowUrlImportModal(true)}
-                        className="bg-gray-700 text-white px-4 py-2 rounded font-medium hover:bg-gray-600 cursor-pointer flex items-center gap-2"
-                    >
-                        <HiLink className="w-5 h-5" /> Import from URL
                     </button>
                 </div>
             </div>
@@ -1066,8 +879,8 @@ const Products = () => {
                                     >
                                         <td className="p-3">{index + 1}</td>
                                         <td className="p-3">
-                                            {product.images && product.images.length > 0 ? (
-                                                <img src={product.images[0]} alt={product.name} className="w-12 h-12 object-cover rounded" />
+                                            {product.primaryImage || (product.images && product.images.length > 0) ? (
+                                                <img src={product.primaryImage || product.images[0]} alt={product.name} className="w-12 h-12 object-cover rounded" />
                                             ) : (
                                                 <div className="w-12 h-12 bg-gray-600 rounded flex items-center justify-center">
                                                     <HiPhotograph className="w-6 h-6 text-gray-400" />
@@ -1183,7 +996,7 @@ const Products = () => {
                             />
                         </div>
 
-                        {/* Description and Image */}
+                        {/* Description and Primary Image */}
                         <div className="grid grid-cols-2 gap-8 mb-6">
                             <div>
                                 <h4 className="text-center mb-4">Description</h4>
@@ -1194,28 +1007,48 @@ const Products = () => {
                                     className="w-full h-48 bg-[#2a2a2a] border border-gray-600 rounded p-4 text-white resize-none"
                                 />
                             </div>
-                            <div className="flex items-center justify-center">
-                                <div className="w-80 h-48 bg-gray-700 rounded overflow-hidden relative">
-                                    {productImages.length > 0 ? (
-                                        <img src={productImages[currentImageIndex]} alt="" className="w-full h-full object-cover" />
+                            <div className="flex flex-col items-center justify-center">
+                                <h4 className="text-center mb-4 text-[#d4a853]">Primary Product Image</h4>
+                                <div 
+                                    onClick={() => primaryImageInputRef.current?.click()}
+                                    className="w-80 h-48 bg-gray-700 rounded overflow-hidden relative cursor-pointer hover:bg-gray-600 transition-colors border-2 border-dashed border-gray-500 hover:border-[#d4a853]"
+                                >
+                                    {primaryImage ? (
+                                        <>
+                                            <img src={primaryImage} alt="Primary Product" className="w-full h-full object-cover" />
+                                            <div className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                <span className="text-white text-sm flex items-center gap-2">
+                                                    <HiUpload className="w-5 h-5" /> Click to change image
+                                                </span>
+                                            </div>
+                                        </>
                                     ) : (
-                                        <div className="absolute inset-0 flex items-center justify-center text-gray-500">
-                                            Product Image
+                                        <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400">
+                                            <HiUpload className="w-10 h-10 mb-2" />
+                                            <span className="text-sm">Click to browse image</span>
+                                            <span className="text-xs mt-1">(JPG, PNG, WEBP)</span>
                                         </div>
                                     )}
-                                    <button 
-                                        onClick={prevImage}
-                                        className="absolute left-2 top-1/2 transform -translate-y-1/2 text-[#d4a853] text-2xl hover:scale-125 cursor-pointer"
-                                    >
-                                        ❮
-                                    </button>
-                                    <button 
-                                        onClick={nextImage}
-                                        className="absolute right-2 top-1/2 transform -translate-y-1/2 text-[#d4a853] text-2xl hover:scale-125 cursor-pointer"
-                                    >
-                                        ❯
-                                    </button>
                                 </div>
+                                {primaryImage && (
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); setPrimaryImage(''); }}
+                                        className="mt-2 text-red-400 text-sm hover:text-red-300 cursor-pointer flex items-center gap-1"
+                                    >
+                                        <HiX className="w-4 h-4" /> Remove Image
+                                    </button>
+                                )}
+                                <p className="text-gray-500 text-xs mt-2 text-center">
+                                    {primaryImage ? 'Image selected' : 'Optional - You can add image later'}
+                                </p>
+                                {/* Hidden file input for primary image */}
+                                <input
+                                    type="file"
+                                    ref={primaryImageInputRef}
+                                    onChange={handlePrimaryImageSelect}
+                                    accept=".jpg,.jpeg,.png,.webp"
+                                    className="hidden"
+                                />
                             </div>
                         </div>
 
@@ -1223,27 +1056,6 @@ const Products = () => {
                         <div className="flex justify-center gap-2 mb-8">
                             <ActionButton onClick={() => { setSelectedProduct(null); resetForm(); }}>Add</ActionButton>
                             <ActionButton onClick={handleSave}>Save</ActionButton>
-                        </div>
-
-                        {/* Add Image by URL - Inline */}
-                        <div className="mb-6 p-4 bg-[#2a2a2a] rounded border border-[#d4a853]/30">
-                            <h5 className="text-sm text-[#d4a853] mb-2 flex items-center gap-2"><HiLink className="w-4 h-4" /> Add Image by URL</h5>
-                            <div className="flex gap-2">
-                                <input
-                                    type="text"
-                                    value={newImageUrl}
-                                    onChange={(e) => setNewImageUrl(e.target.value)}
-                                    placeholder="https://example.com/image.jpg"
-                                    className="flex-1 bg-[#1a1a1a] border border-gray-600 rounded px-3 py-2 text-white"
-                                    onKeyPress={(e) => e.key === 'Enter' && handleAddImageUrl()}
-                                />
-                                <button
-                                    onClick={handleAddImageUrl}
-                                    className="bg-[#d4a853] text-black px-4 py-2 rounded font-medium hover:bg-[#c49743] cursor-pointer flex items-center gap-2"
-                                >
-                                    <HiPlus className="w-4 h-4" /> Add Image
-                                </button>
-                            </div>
                         </div>
 
                         {/* Basic Product Properties */}
@@ -1396,28 +1208,57 @@ const Products = () => {
                                     </tbody>
                                 </table>
                             </div>
-                            <div className="flex items-center justify-center">
-                                <div className="w-80 h-64 bg-gray-700 rounded overflow-hidden relative">
+                            <div className="flex flex-col items-center justify-center">
+                                <div 
+                                    onClick={() => multiImageInputRef.current?.click()}
+                                    className="w-80 h-64 bg-gray-700 rounded overflow-hidden relative cursor-pointer hover:bg-gray-600 transition-colors border-2 border-dashed border-gray-500 hover:border-[#d4a853]"
+                                >
                                     {productImages.length > 0 ? (
-                                        <img src={productImages[currentImageIndex]} alt="" className="w-full h-full object-cover" />
+                                        <img src={productImages[currentImageIndex]?.url || productImages[currentImageIndex]} alt="" className="w-full h-full object-cover" />
                                     ) : (
-                                        <div className="absolute inset-0 flex items-center justify-center text-gray-500">
-                                            Stone Image
+                                        <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400">
+                                            <HiUpload className="w-10 h-10 mb-2" />
+                                            <span className="text-sm">Click to add images</span>
+                                            <span className="text-xs mt-1">(JPG, PNG, WEBP - Multiple)</span>
+                                        </div>
+                                    )}
+                                    {productImages.length > 0 && (
+                                        <div className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
+                                            <span className="text-white text-sm flex items-center gap-2">
+                                                <HiPlus className="w-5 h-5" /> Click to add more images
+                                            </span>
                                         </div>
                                     )}
                                     <button 
-                                        onClick={prevImage}
-                                        className="absolute left-2 top-1/2 transform -translate-y-1/2 text-[#d4a853] text-2xl hover:scale-125 cursor-pointer"
+                                        onClick={(e) => { e.stopPropagation(); prevImage(); }}
+                                        className="absolute left-2 top-1/2 transform -translate-y-1/2 text-[#d4a853] text-2xl hover:scale-125 cursor-pointer z-10"
                                     >
                                         ❮
                                     </button>
                                     <button 
-                                        onClick={nextImage}
-                                        className="absolute right-2 top-1/2 transform -translate-y-1/2 text-[#d4a853] text-2xl hover:scale-125 cursor-pointer"
+                                        onClick={(e) => { e.stopPropagation(); nextImage(); }}
+                                        className="absolute right-2 top-1/2 transform -translate-y-1/2 text-[#d4a853] text-2xl hover:scale-125 cursor-pointer z-10"
                                     >
                                         ❯
                                     </button>
+                                    {productImages.length > 0 && (
+                                        <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 bg-black/60 px-2 py-1 rounded text-xs text-white">
+                                            {currentImageIndex + 1} / {productImages.length}
+                                        </div>
+                                    )}
                                 </div>
+                                {/* Hidden file input for multi-image */}
+                                <input
+                                    type="file"
+                                    ref={multiImageInputRef}
+                                    onChange={handleMultiImageSelect}
+                                    accept=".jpg,.jpeg,.png,.webp"
+                                    multiple
+                                    className="hidden"
+                                />
+                                <p className="text-gray-500 text-xs mt-2 text-center">
+                                    {productImages.length > 0 ? `${productImages.length} image(s) added` : 'Optional - Click to browse images'}
+                                </p>
                             </div>
                         </div>
 
@@ -1429,24 +1270,48 @@ const Products = () => {
 
                         {/* Quality Section */}
                         <div className="grid grid-cols-2 gap-8 mb-6">
-                            <div className="flex items-center justify-center">
-                                <div className="w-80 h-64 bg-gray-700 rounded overflow-hidden relative">
+                            <div className="flex flex-col items-center justify-center">
+                                <div 
+                                    onClick={() => multiImageInputRef.current?.click()}
+                                    className="w-80 h-64 bg-gray-700 rounded overflow-hidden relative cursor-pointer hover:bg-gray-600 transition-colors border-2 border-dashed border-gray-500 hover:border-[#d4a853]"
+                                >
                                     {productImages.length > 0 ? (
-                                        <img src={productImages[currentImageIndex]} alt="" className="w-full h-full object-cover" />
-                                    ) : null}
+                                        <>
+                                            <img src={productImages[currentImageIndex]?.url || productImages[currentImageIndex]} alt="" className="w-full h-full object-cover" />
+                                            <div className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                <span className="text-white text-sm flex items-center gap-2">
+                                                    <HiPlus className="w-5 h-5" /> Click to add more images
+                                                </span>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400">
+                                            <HiUpload className="w-10 h-10 mb-2" />
+                                            <span className="text-sm">Click to add images</span>
+                                            <span className="text-xs mt-1">(JPG, PNG, WEBP - Multiple)</span>
+                                        </div>
+                                    )}
                                     <button 
-                                        onClick={prevImage}
-                                        className="absolute left-2 top-1/2 transform -translate-y-1/2 text-[#d4a853] text-2xl hover:scale-125 cursor-pointer"
+                                        onClick={(e) => { e.stopPropagation(); prevImage(); }}
+                                        className="absolute left-2 top-1/2 transform -translate-y-1/2 text-[#d4a853] text-2xl hover:scale-125 cursor-pointer z-10"
                                     >
                                         ❮
                                     </button>
                                     <button 
-                                        onClick={nextImage}
-                                        className="absolute right-2 top-1/2 transform -translate-y-1/2 text-[#d4a853] text-2xl hover:scale-125 cursor-pointer"
+                                        onClick={(e) => { e.stopPropagation(); nextImage(); }}
+                                        className="absolute right-2 top-1/2 transform -translate-y-1/2 text-[#d4a853] text-2xl hover:scale-125 cursor-pointer z-10"
                                     >
                                         ❯
                                     </button>
+                                    {productImages.length > 0 && (
+                                        <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 bg-black/60 px-2 py-1 rounded text-xs text-white">
+                                            {currentImageIndex + 1} / {productImages.length}
+                                        </div>
+                                    )}
                                 </div>
+                                <p className="text-gray-500 text-xs mt-2 text-center">
+                                    {productImages.length > 0 ? `${productImages.length} image(s) - Click to add more` : 'Click to browse images'}
+                                </p>
                             </div>
                             <div className="flex items-center justify-center">
                                 <h3 className="text-3xl italic text-[#d4a853]/50">Exceptional Quality You Can Trust</h3>
@@ -1471,53 +1336,90 @@ const Products = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {productImages.length > 0 ? productImages.map((imgUrl, index) => (
-                                        <tr key={index} className="border-b border-gray-600">
-                                            <td className="p-2 flex items-center gap-2">
-                                                <img src={imgUrl} alt={`Image ${index + 1}`} className="w-10 h-10 object-cover rounded" onError={(e) => e.target.style.display='none'} />
-                                                Image {index + 1}
-                                            </td>
-                                            <td className="p-2">
-                                                <input 
-                                                    type="checkbox" 
-                                                    className="accent-[#d4a853]"
-                                                    checked={formData.isNewArrival}
-                                                    onChange={(e) => setFormData({...formData, isNewArrival: e.target.checked})}
-                                                />
-                                            </td>
-                                            <td className="p-2">
-                                                <div className="flex gap-2">
-                                                    <ActionButton onClick={() => window.open(imgUrl, '_blank')}>View</ActionButton>
-                                                    <ActionButton onClick={() => setCurrentImageIndex(index)}>Select</ActionButton>
-                                                    <ActionButton onClick={() => handleDeleteImage(index)}>Delete</ActionButton>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    )) : (
+                                    {productImages.length > 0 ? productImages.map((img, index) => {
+                                        const imgUrl = img?.url || img;
+                                        const imgDescription = img?.description || `Image ${index + 1}`;
+                                        const imgIsNewArrival = img?.isNewArrival || false;
+                                        const isEditing = editingImageIndex === index;
+                                        
+                                        return (
+                                            <tr key={index} className={`border-b border-gray-600 ${currentImageIndex === index ? 'bg-[#2a2a2a]' : ''}`}>
+                                                <td className="p-2">
+                                                    <div className="flex items-center gap-2">
+                                                        <img src={imgUrl} alt={imgDescription} className="w-10 h-10 object-cover rounded" onError={(e) => e.target.style.display='none'} />
+                                                        {isEditing ? (
+                                                            <input
+                                                                type="text"
+                                                                value={imgDescription}
+                                                                onChange={(e) => handleUpdateImageMetadata(index, 'description', e.target.value)}
+                                                                className="bg-[#1a1a1a] border border-gray-600 rounded px-2 py-1 text-white text-sm flex-1"
+                                                                autoFocus
+                                                            />
+                                                        ) : (
+                                                            <span className="text-sm">{imgDescription}</span>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                                <td className="p-2">
+                                                    <input 
+                                                        type="checkbox" 
+                                                        className="accent-[#d4a853] w-4 h-4 cursor-pointer"
+                                                        checked={imgIsNewArrival}
+                                                        onChange={(e) => handleUpdateImageMetadata(index, 'isNewArrival', e.target.checked)}
+                                                    />
+                                                </td>
+                                                <td className="p-2">
+                                                    <div className="flex gap-2 flex-wrap">
+                                                        <ActionButton onClick={() => { 
+                                                            if (imgUrl.startsWith('data:')) {
+                                                                const win = window.open();
+                                                                win.document.write(`<img src="${imgUrl}" style="max-width:100%;"/>`);
+                                                            } else {
+                                                                window.open(imgUrl, '_blank');
+                                                            }
+                                                        }}>View</ActionButton>
+                                                        <ActionButton onClick={() => setEditingImageIndex(isEditing ? null : index)}>
+                                                            {isEditing ? 'Done' : 'Edit'}
+                                                        </ActionButton>
+                                                        <ActionButton onClick={() => setCurrentImageIndex(index)}>Select</ActionButton>
+                                                        <ActionButton onClick={() => handleDeleteImage(index)}>Delete</ActionButton>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    }) : (
                                         <tr className="border-b border-gray-600">
-                                            <td className="p-2 text-gray-500" colSpan="3">No images added. Add images using URL below.</td>
+                                            <td className="p-2 text-gray-500" colSpan="3">No images added. Click carousel above or use options below to add images.</td>
                                         </tr>
                                     )}
                                 </tbody>
                             </table>
                             
-                            {/* Add Image by URL */}
-                            <div className="mt-4 p-4 bg-[#2a2a2a] rounded">
-                                <h5 className="text-sm text-[#d4a853] mb-2">Add Image by URL</h5>
-                                <div className="flex gap-2">
+                            {/* Add Images Section */}
+                            <div className="mt-4 flex gap-4 flex-wrap">
+                                {/* Add from Device */}
+                                <button
+                                    onClick={() => multiImageInputRef.current?.click()}
+                                    className="bg-[#d4a853] text-black px-4 py-2 rounded font-medium hover:bg-[#c49743] cursor-pointer flex items-center gap-2"
+                                >
+                                    <HiUpload className="w-4 h-4" /> Add Images from Device
+                                </button>
+                                
+                                {/* Add by URL */}
+                                <div className="flex gap-2 flex-1">
                                     <input
                                         type="text"
                                         value={newImageUrl}
                                         onChange={(e) => setNewImageUrl(e.target.value)}
-                                        placeholder="https://example.com/image.jpg"
-                                        className="flex-1 bg-[#1a1a1a] border border-gray-600 rounded px-3 py-2 text-white"
+                                        placeholder="Or enter image URL..."
+                                        className="flex-1 bg-[#1a1a1a] border border-gray-600 rounded px-3 py-2 text-white min-w-[200px]"
                                         onKeyPress={(e) => e.key === 'Enter' && handleAddImageUrl()}
                                     />
                                     <button
                                         onClick={handleAddImageUrl}
-                                        className="bg-[#d4a853] text-black px-4 py-2 rounded font-medium hover:bg-[#c49743] cursor-pointer"
+                                        className="bg-gray-600 text-white px-4 py-2 rounded font-medium hover:bg-gray-500 cursor-pointer"
                                     >
-                                        + Add Image
+                                        + Add URL
                                     </button>
                                 </div>
                             </div>
@@ -1537,15 +1439,6 @@ const Products = () => {
                     </div>
                 </div>
             )}
-
-            {/* Hidden file input for Excel/CSV import only */}
-            <input
-                type="file"
-                ref={excelInputRef}
-                onChange={handleExcelImport}
-                accept=".csv,.xlsx,.xls"
-                className="hidden"
-            />
         </div>
     );
 };

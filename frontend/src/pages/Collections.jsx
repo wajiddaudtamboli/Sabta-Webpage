@@ -254,18 +254,18 @@ const Collections = () => {
       </section>
 
       {/* ✅ CTA SECTION */}
-      <section className="bg-linear-to-r from-amber-600 to-amber-800 py-16 px-6 sm:px-10 md:px-16 lg:px-24">
+      <section className="bg-[#1a1a1a] py-16 px-6 sm:px-10 md:px-16 lg:px-24 border-t border-gray-800">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
             Can't Find What You're Looking For?
           </h2>
-          <p className="text-white/90 text-lg mb-8">
+          <p className="text-gray-300 text-lg mb-8">
             Our team of experts can help you find the perfect stone for your project.
             Contact us today for personalized recommendations.
           </p>
           <Link
             to="/contact"
-            className="inline-block bg-white text-amber-700 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors duration-300"
+            className="inline-block bg-[#d4a853] text-black px-8 py-3 rounded-lg font-semibold hover:bg-[#c49743] transition-colors duration-300"
           >
             Get in Touch
           </Link>
