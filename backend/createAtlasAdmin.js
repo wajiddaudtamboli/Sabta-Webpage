@@ -1,7 +1,8 @@
+require('dotenv').config();
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
-const MONGODB_URI = 'mongodb+srv://wajiddaudtamboli123_db_user:p3NaofPM8RMfM886@cluster0.ljde3yn.mongodb.net/sabta-granite?retryWrites=true&w=majority';
+const MONGODB_URI = process.env.MONGODB_URI;
 
 const AdminUserSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },

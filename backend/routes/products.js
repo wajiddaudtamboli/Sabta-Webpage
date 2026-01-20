@@ -3,6 +3,84 @@ const router = express.Router();
 const Product = require('../models/Product');
 const Collection = require('../models/Collection');
 const authMiddleware = require('../middleware/authMiddleware');
+const cloudinary = require('cloudinary').v2;
+
+// Check if Cloudinary is properly configured
+const isCloudinaryConfigured = () => {
+    return process.env.CLOUDINARY_CLOUD_NAME && 
+           process.env.CLOUDINARY_API_KEY && 
+           process.env.CLOUDINARY_API_SECRET;
+};
+
+// Helper function to upload base64 image to Cloudinary
+const uploadBase64ToCloudinary = async (base64String, folder = 'products') => {
+    try {
+        if (!base64String) return null;
+        
+        // If it's already a URL (not base64), return as-is
+        if (base64String.startsWith('http://') || base64String.startsWith('https://')) {
+            return base64String;
+        }
+        
+        // If it's not a valid base64 data URL, return it as-is
+        if (!base64String.startsWith('data:image/')) {
+            return base64String;
+        }
+        
+        // If Cloudinary is not configured, return base64 as-is (will be stored in DB)
+        if (!isCloudinaryConfigured()) {
+            console.log('Cloudinary not configured, storing base64 image directly');
+            return base64String;
+        }
+        
+        const result = await cloudinary.uploader.upload(base64String, {
+            folder: `sabta-granite/${folder}`,
+            resource_type: 'image',
+            transformation: [
+                { quality: 'auto:good' },
+                { fetch_format: 'auto' }
+            ]
+        });
+        
+        return result.secure_url;
+    } catch (error) {
+        console.error('Cloudinary upload error:', error.message);
+        // Return base64 as fallback if upload fails
+        return base64String;
+    }
+};
+
+// Helper function to process images array (upload base64 to Cloudinary)
+const processImagesArray = async (images) => {
+    if (!images || !Array.isArray(images)) return [];
+    
+    const processedImages = await Promise.all(
+        images.map(async (img, index) => {
+            let url = '';
+            let description = `Image ${index + 1}`;
+            let isNewArrival = false;
+            
+            if (typeof img === 'string') {
+                url = await uploadBase64ToCloudinary(img) || img;
+            } else if (typeof img === 'object' && img.url) {
+                url = await uploadBase64ToCloudinary(img.url) || img.url;
+                description = img.description || description;
+                isNewArrival = img.isNewArrival || false;
+            }
+            
+            if (!url) return null;
+            
+            return {
+                url,
+                description,
+                isNewArrival,
+                displayOrder: index
+            };
+        })
+    );
+    
+    return processedImages.filter(img => img !== null);
+};
 
 // Helper function to generate unique product code
 const generateProductCode = async () => {
@@ -17,27 +95,57 @@ const generateProductCode = async () => {
 // Get all products with optional filters (public)
 router.get('/', async (req, res) => {
     try {
-        const { category, color, finish, collection } = req.query;
+        const { category, color, finish, collection, collectionId } = req.query;
         let query = { status: 'active' };
+        let collectionFilter = null;
         
-        if (category) {
-            // Match category case-insensitively
-            query.category = { $regex: new RegExp(category.replace(/-/g, ' '), 'i') };
+        // Build collection/category filter
+        if (collectionId) {
+            // Convert category slug to search term (e.g., 'marble-series' -> 'marble')
+            const searchTerm = category ? category.replace(/-/g, ' ').replace(/\s*series\s*/i, '').trim() : '';
+            collectionFilter = {
+                $or: [
+                    { collectionId: collectionId },
+                    { collectionName: { $regex: new RegExp(searchTerm || category || '', 'i') } },
+                    { category: { $regex: new RegExp(searchTerm || category || '', 'i') } }
+                ]
+            };
+        } else if (category) {
+            // Convert category slug to search term (e.g., 'marble-series' -> 'marble')
+            const searchTerm = category.replace(/-/g, ' ').replace(/\s*series\s*/i, '').trim();
+            collectionFilter = {
+                $or: [
+                    { category: { $regex: new RegExp(searchTerm, 'i') } },
+                    { collectionName: { $regex: new RegExp(searchTerm, 'i') } }
+                ]
+            };
+        } else if (collection) {
+            collectionFilter = {
+                $or: [
+                    { collectionName: { $regex: new RegExp(collection, 'i') } },
+                    { category: { $regex: new RegExp(collection, 'i') } }
+                ]
+            };
         }
-        if (collection) {
-            query.$or = [
-                { collectionName: { $regex: new RegExp(collection, 'i') } },
-                { category: { $regex: new RegExp(collection, 'i') } }
-            ];
+        
+        // Combine filters using $and if we have collection filter
+        if (collectionFilter) {
+            query.$and = [collectionFilter];
         }
+        
+        // Add color and finish filters
         if (color) {
-            query.color = { $regex: new RegExp(color, 'i') };
+            if (!query.$and) query.$and = [];
+            query.$and.push({ color: { $regex: new RegExp(color, 'i') } });
         }
         if (finish) {
-            query.finish = { $regex: new RegExp(finish, 'i') };
+            if (!query.$and) query.$and = [];
+            query.$and.push({ finish: { $regex: new RegExp(finish, 'i') } });
         }
         
+        console.log('Products query:', JSON.stringify(query, null, 2));
         const products = await Product.find(query).sort({ displayOrder: 1, colorSequence: 1, createdAt: -1 });
+        console.log('Found products:', products.length);
         res.json(products);
     } catch (err) {
         console.error('Error fetching products:', err);
@@ -146,7 +254,7 @@ router.get('/:identifier', async (req, res) => {
 // Create product
 router.post('/', authMiddleware, async (req, res) => {
     try {
-        console.log('Creating product with data:', JSON.stringify(req.body, null, 2));
+        console.log('Creating product...');
         
         const productData = { ...req.body };
         
@@ -160,36 +268,15 @@ router.post('/', authMiddleware, async (req, res) => {
             return res.status(400).json({ message: 'Product name is required' });
         }
         
-        // Handle images - can be array of strings or array of objects
-        if (productData.images) {
-            if (!Array.isArray(productData.images)) {
-                productData.images = typeof productData.images === 'string' ? [productData.images] : [];
-            }
-            
-            // Convert to productImages format for storage
-            const processedImages = productData.images.map((img, index) => {
-                if (typeof img === 'string') {
-                    return {
-                        url: img,
-                        description: `Image ${index + 1}`,
-                        isNewArrival: productData.isNewArrival || false,
-                        displayOrder: index
-                    };
-                } else if (typeof img === 'object' && img.url) {
-                    return {
-                        url: img.url,
-                        description: img.description || `Image ${index + 1}`,
-                        isNewArrival: img.isNewArrival || false,
-                        displayOrder: img.displayOrder || index
-                    };
-                }
-                return null;
-            }).filter(img => img !== null);
-            
-            // Store in productImages
+        // Handle primary image upload to Cloudinary
+        if (productData.primaryImage) {
+            productData.primaryImage = await uploadBase64ToCloudinary(productData.primaryImage, 'products/primary') || productData.primaryImage;
+        }
+        
+        // Handle images array - upload to Cloudinary
+        if (productData.images && Array.isArray(productData.images)) {
+            const processedImages = await processImagesArray(productData.images);
             productData.productImages = processedImages;
-            
-            // Also keep legacy images array (just URLs) for backward compatibility
             productData.images = processedImages.map(img => img.url);
         } else {
             productData.images = [];
@@ -206,6 +293,7 @@ router.post('/', authMiddleware, async (req, res) => {
                 const collection = await Collection.findById(productData.collectionId);
                 if (collection) {
                     productData.collectionName = collection.name;
+                    productData.category = collection.name.replace(' Series', '').replace(' Collections', '');
                 }
             } catch (e) {
                 console.log('Collection lookup error:', e.message);
@@ -243,36 +331,15 @@ router.put('/:id', authMiddleware, async (req, res) => {
         
         const updateData = { ...req.body, updatedAt: Date.now() };
         
-        // Handle images - can be array of strings or array of objects
-        if (updateData.images) {
-            if (!Array.isArray(updateData.images)) {
-                updateData.images = typeof updateData.images === 'string' ? [updateData.images] : [];
-            }
-            
-            // Convert to productImages format for storage
-            const processedImages = updateData.images.map((img, index) => {
-                if (typeof img === 'string') {
-                    return {
-                        url: img,
-                        description: `Image ${index + 1}`,
-                        isNewArrival: updateData.isNewArrival || false,
-                        displayOrder: index
-                    };
-                } else if (typeof img === 'object' && img.url) {
-                    return {
-                        url: img.url,
-                        description: img.description || `Image ${index + 1}`,
-                        isNewArrival: img.isNewArrival || false,
-                        displayOrder: img.displayOrder || index
-                    };
-                }
-                return null;
-            }).filter(img => img !== null);
-            
-            // Store in productImages
+        // Handle primary image upload to Cloudinary
+        if (updateData.primaryImage) {
+            updateData.primaryImage = await uploadBase64ToCloudinary(updateData.primaryImage, 'products/primary') || updateData.primaryImage;
+        }
+        
+        // Handle images array - upload to Cloudinary
+        if (updateData.images && Array.isArray(updateData.images)) {
+            const processedImages = await processImagesArray(updateData.images);
             updateData.productImages = processedImages;
-            
-            // Also keep legacy images array (just URLs) for backward compatibility
             updateData.images = processedImages.map(img => img.url);
         }
         
@@ -282,6 +349,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
                 const collection = await Collection.findById(updateData.collectionId);
                 if (collection) {
                     updateData.collectionName = collection.name;
+                    updateData.category = collection.name.replace(' Series', '').replace(' Collections', '');
                 }
             } catch (e) {
                 console.log('Collection lookup error:', e.message);

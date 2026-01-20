@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import api from '../../api/api';
-import { HiEye, HiPencil, HiTrash, HiDotsVertical, HiPlay, HiPause, HiPlus, HiX, HiPhotograph, HiLink, HiUpload } from 'react-icons/hi';
+import { HiEye, HiPencil, HiTrash, HiDotsVertical, HiPlay, HiPause, HiPlus, HiX, HiPhotograph, HiLink } from 'react-icons/hi';
 
 const Products = () => {
     // Collections state - now from database
@@ -28,16 +28,13 @@ const Products = () => {
     const [isEditing, setIsEditing] = useState(false);
     const [loading, setLoading] = useState(false);
     
-    // Product images state for carousel (multi-image with metadata)
+    // Product images state for gallery (multi-image with metadata)
     const [productImages, setProductImages] = useState([]);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
-    const [newImageUrl, setNewImageUrl] = useState('');
     const [editingImageIndex, setEditingImageIndex] = useState(null);
-    const multiImageInputRef = useRef(null);
     
-    // Primary image state (single image from device)
+    // Primary image state (URL)
     const [primaryImage, setPrimaryImage] = useState('');
-    const primaryImageInputRef = useRef(null);
     
     // Dropdown menu state
     const [openMenuId, setOpenMenuId] = useState(null);
@@ -418,99 +415,11 @@ const Products = () => {
         setEditingImageIndex(null);
     };
 
-    // Handle adding image by URL
-    const handleAddImageUrl = () => {
-        // Only add if URL is provided, silently ignore empty input
-        if (!newImageUrl.trim()) {
-            return;
-        }
-        const newImage = {
-            url: newImageUrl.trim(),
-            description: `Image ${productImages.length + 1}`,
-            isNewArrival: false
-        };
-        setProductImages(prev => [...prev, newImage]);
-        setNewImageUrl('');
-        showToast('Image URL added successfully');
-    };
-
-    // Handle multiple image selection from device
-    const handleMultiImageSelect = (e) => {
-        const files = Array.from(e.target.files || []);
-        if (files.length === 0) return;
-        
-        const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-        const validFiles = files.filter(file => validTypes.includes(file.type));
-        
-        if (validFiles.length === 0) {
-            showToast('Please select valid image files (JPG, PNG, or WEBP)', 'error');
-            return;
-        }
-        
-        // Process each file and convert to base64
-        const processFiles = validFiles.map((file, idx) => {
-            return new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    resolve({
-                        url: event.target.result,
-                        description: file.name.replace(/\.[^/.]+$/, '') || `Image ${productImages.length + idx + 1}`,
-                        isNewArrival: false
-                    });
-                };
-                reader.onerror = () => resolve(null);
-                reader.readAsDataURL(file);
-            });
-        });
-        
-        Promise.all(processFiles).then(results => {
-            const newImages = results.filter(img => img !== null);
-            if (newImages.length > 0) {
-                setProductImages(prev => [...prev, ...newImages]);
-                showToast(`${newImages.length} image(s) added successfully`);
-            }
-        });
-        
-        // Reset file input
-        if (multiImageInputRef.current) {
-            multiImageInputRef.current.value = '';
-        }
-    };
-
     // Handle updating image metadata
     const handleUpdateImageMetadata = (index, field, value) => {
         setProductImages(prev => prev.map((img, i) => 
             i === index ? { ...img, [field]: value } : img
         ));
-    };
-
-    // Handle primary image file selection from device
-    const handlePrimaryImageSelect = (e) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        
-        // Validate file type
-        const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-        if (!validTypes.includes(file.type)) {
-            showToast('Please select a valid image file (JPG, PNG, or WEBP)', 'error');
-            return;
-        }
-        
-        // Convert to base64 for preview and storage
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            setPrimaryImage(event.target.result);
-            showToast('Primary image selected successfully');
-        };
-        reader.onerror = () => {
-            showToast('Error reading image file', 'error');
-        };
-        reader.readAsDataURL(file);
-        
-        // Reset file input
-        if (primaryImageInputRef.current) {
-            primaryImageInputRef.current.value = '';
-        }
     };
 
     // Handle image delete from list
@@ -522,15 +431,6 @@ const Products = () => {
             setCurrentImageIndex(currentImageIndex - 1);
         }
         setEditingImageIndex(null);
-    };
-
-    // Image carousel navigation
-    const prevImage = () => {
-        setCurrentImageIndex(prev => (prev > 0 ? prev - 1 : productImages.length - 1));
-    };
-
-    const nextImage = () => {
-        setCurrentImageIndex(prev => (prev < productImages.length - 1 ? prev + 1 : 0));
     };
 
     // Action Button Component (same as original)
@@ -720,25 +620,7 @@ const Products = () => {
                 </div>
             )}
 
-            {/* Page Header with Add Product Button */}
-            <div className="flex items-center justify-between mb-6">
-                <h1 className="text-2xl font-bold text-white">Products Management</h1>
-                <div className="flex gap-3">
-                    <button
-                        onClick={() => {
-                            if (!selectedCollection) {
-                                showToast('Please select a collection first to add a product', 'error');
-                                return;
-                            }
-                            resetForm();
-                            setIsEditing(true);
-                        }}
-                        className="bg-[#d4a853] text-black px-4 py-2 rounded font-medium hover:bg-[#c49743] cursor-pointer flex items-center gap-2"
-                    >
-                        <HiPlus className="w-5 h-5" /> Add Product
-                    </button>
-                </div>
-            </div>
+            {/* Page Header */}
 
             {/* Collections Section */}
             <div className="mb-8">
@@ -1008,47 +890,52 @@ const Products = () => {
                                 />
                             </div>
                             <div className="flex flex-col items-center justify-center">
-                                <h4 className="text-center mb-4 text-[#d4a853]">Primary Product Image</h4>
-                                <div 
-                                    onClick={() => primaryImageInputRef.current?.click()}
-                                    className="w-80 h-48 bg-gray-700 rounded overflow-hidden relative cursor-pointer hover:bg-gray-600 transition-colors border-2 border-dashed border-gray-500 hover:border-[#d4a853]"
-                                >
-                                    {primaryImage ? (
-                                        <>
-                                            <img src={primaryImage} alt="Primary Product" className="w-full h-full object-cover" />
-                                            <div className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                <span className="text-white text-sm flex items-center gap-2">
-                                                    <HiUpload className="w-5 h-5" /> Click to change image
-                                                </span>
+                                <h4 className="text-center mb-4 text-[#d4a853]">Primary Product Image URL</h4>
+                                <div className="w-full max-w-md">
+                                    <div className="flex gap-2 mb-2">
+                                        <input
+                                            type="url"
+                                            value={primaryImage}
+                                            onChange={(e) => setPrimaryImage(e.target.value)}
+                                            placeholder="https://example.com/product-image.jpg"
+                                            className="flex-1 bg-[#2a2a2a] border border-gray-600 rounded px-3 py-2 text-white"
+                                        />
+                                        {primaryImage && (
+                                            <button
+                                                onClick={() => setPrimaryImage('')}
+                                                className="bg-red-600 text-white px-3 py-2 rounded hover:bg-red-700"
+                                            >
+                                                <HiX className="w-5 h-5" />
+                                            </button>
+                                        )}
+                                    </div>
+                                    {primaryImage && (
+                                        <div className="w-80 h-48 bg-gray-700 rounded overflow-hidden mx-auto border-2 border-[#d4a853]">
+                                            <img 
+                                                src={primaryImage} 
+                                                alt="Primary Product" 
+                                                className="w-full h-full object-cover"
+                                                onError={(e) => {
+                                                    e.target.style.display = 'none';
+                                                    e.target.nextSibling.style.display = 'flex';
+                                                }}
+                                            />
+                                            <div className="hidden w-full h-full items-center justify-center text-red-400">
+                                                <span>Invalid Image URL</span>
                                             </div>
-                                        </>
-                                    ) : (
-                                        <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400">
-                                            <HiUpload className="w-10 h-10 mb-2" />
-                                            <span className="text-sm">Click to browse image</span>
-                                            <span className="text-xs mt-1">(JPG, PNG, WEBP)</span>
+                                        </div>
+                                    )}
+                                    {!primaryImage && (
+                                        <div className="w-80 h-48 bg-gray-700 rounded overflow-hidden mx-auto border-2 border-dashed border-gray-500 flex flex-col items-center justify-center text-gray-400">
+                                            <HiLink className="w-10 h-10 mb-2" />
+                                            <span className="text-sm">Enter image URL above</span>
+                                            <span className="text-xs mt-1">(Cloudinary, Imgur, etc.)</span>
                                         </div>
                                     )}
                                 </div>
-                                {primaryImage && (
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); setPrimaryImage(''); }}
-                                        className="mt-2 text-red-400 text-sm hover:text-red-300 cursor-pointer flex items-center gap-1"
-                                    >
-                                        <HiX className="w-4 h-4" /> Remove Image
-                                    </button>
-                                )}
                                 <p className="text-gray-500 text-xs mt-2 text-center">
-                                    {primaryImage ? 'Image selected' : 'Optional - You can add image later'}
+                                    {primaryImage ? 'Image URL set' : 'Optional - Add image URL later'}
                                 </p>
-                                {/* Hidden file input for primary image */}
-                                <input
-                                    type="file"
-                                    ref={primaryImageInputRef}
-                                    onChange={handlePrimaryImageSelect}
-                                    accept=".jpg,.jpeg,.png,.webp"
-                                    className="hidden"
-                                />
                             </div>
                         </div>
 
@@ -1209,55 +1096,75 @@ const Products = () => {
                                 </table>
                             </div>
                             <div className="flex flex-col items-center justify-center">
-                                <div 
-                                    onClick={() => multiImageInputRef.current?.click()}
-                                    className="w-80 h-64 bg-gray-700 rounded overflow-hidden relative cursor-pointer hover:bg-gray-600 transition-colors border-2 border-dashed border-gray-500 hover:border-[#d4a853]"
-                                >
-                                    {productImages.length > 0 ? (
-                                        <img src={productImages[currentImageIndex]?.url || productImages[currentImageIndex]} alt="" className="w-full h-full object-cover" />
-                                    ) : (
-                                        <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400">
-                                            <HiUpload className="w-10 h-10 mb-2" />
-                                            <span className="text-sm">Click to add images</span>
-                                            <span className="text-xs mt-1">(JPG, PNG, WEBP - Multiple)</span>
-                                        </div>
-                                    )}
-                                    {productImages.length > 0 && (
-                                        <div className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
-                                            <span className="text-white text-sm flex items-center gap-2">
-                                                <HiPlus className="w-5 h-5" /> Click to add more images
-                                            </span>
-                                        </div>
-                                    )}
-                                    <button 
-                                        onClick={(e) => { e.stopPropagation(); prevImage(); }}
-                                        className="absolute left-2 top-1/2 transform -translate-y-1/2 text-[#d4a853] text-2xl hover:scale-125 cursor-pointer z-10"
-                                    >
-                                        ❮
-                                    </button>
-                                    <button 
-                                        onClick={(e) => { e.stopPropagation(); nextImage(); }}
-                                        className="absolute right-2 top-1/2 transform -translate-y-1/2 text-[#d4a853] text-2xl hover:scale-125 cursor-pointer z-10"
-                                    >
-                                        ❯
-                                    </button>
-                                    {productImages.length > 0 && (
+                                <h4 className="text-[#d4a853] text-center mb-4">Gallery Images (URLs)</h4>
+                                
+                                {/* Current Image Preview */}
+                                {productImages.length > 0 ? (
+                                    <div className="w-80 h-64 bg-gray-700 rounded overflow-hidden relative border-2 border-[#d4a853]">
+                                        <img 
+                                            src={productImages[currentImageIndex]?.url || productImages[currentImageIndex]} 
+                                            alt="" 
+                                            className="w-full h-full object-cover"
+                                            onError={(e) => e.target.src = 'https://via.placeholder.com/320x256?text=Invalid+URL'}
+                                        />
+                                        <button 
+                                            onClick={() => setCurrentImageIndex(prev => prev > 0 ? prev - 1 : productImages.length - 1)}
+                                            className="absolute left-2 top-1/2 transform -translate-y-1/2 text-[#d4a853] text-2xl hover:scale-125 cursor-pointer z-10 bg-black/50 rounded-full w-8 h-8 flex items-center justify-center"
+                                        >
+                                            ❮
+                                        </button>
+                                        <button 
+                                            onClick={() => setCurrentImageIndex(prev => prev < productImages.length - 1 ? prev + 1 : 0)}
+                                            className="absolute right-2 top-1/2 transform -translate-y-1/2 text-[#d4a853] text-2xl hover:scale-125 cursor-pointer z-10 bg-black/50 rounded-full w-8 h-8 flex items-center justify-center"
+                                        >
+                                            ❯
+                                        </button>
                                         <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 bg-black/60 px-2 py-1 rounded text-xs text-white">
                                             {currentImageIndex + 1} / {productImages.length}
                                         </div>
-                                    )}
+                                    </div>
+                                ) : (
+                                    <div className="w-80 h-64 bg-gray-700 rounded overflow-hidden border-2 border-dashed border-gray-500 flex flex-col items-center justify-center text-gray-400">
+                                        <HiLink className="w-10 h-10 mb-2" />
+                                        <span className="text-sm">No gallery images added</span>
+                                        <span className="text-xs mt-1">Add URLs below</span>
+                                    </div>
+                                )}
+                                
+                                {/* Add Image URL Input */}
+                                <div className="w-full max-w-md mt-4">
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="url"
+                                            id="newGalleryImageUrl"
+                                            placeholder="https://example.com/gallery-image.jpg"
+                                            className="flex-1 bg-[#2a2a2a] border border-gray-600 rounded px-3 py-2 text-white text-sm"
+                                        />
+                                        <button
+                                            onClick={() => {
+                                                const input = document.getElementById('newGalleryImageUrl');
+                                                const url = input?.value?.trim();
+                                                if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
+                                                    setProductImages(prev => [...prev, {
+                                                        url: url,
+                                                        description: `Image ${prev.length + 1}`,
+                                                        isNewArrival: false
+                                                    }]);
+                                                    input.value = '';
+                                                    showToast('Image URL added');
+                                                } else {
+                                                    showToast('Please enter a valid URL', 'error');
+                                                }
+                                            }}
+                                            className="bg-[#d4a853] text-black px-4 py-2 rounded hover:bg-[#c49743] flex items-center gap-1"
+                                        >
+                                            <HiPlus className="w-4 h-4" /> Add
+                                        </button>
+                                    </div>
                                 </div>
-                                {/* Hidden file input for multi-image */}
-                                <input
-                                    type="file"
-                                    ref={multiImageInputRef}
-                                    onChange={handleMultiImageSelect}
-                                    accept=".jpg,.jpeg,.png,.webp"
-                                    multiple
-                                    className="hidden"
-                                />
+                                
                                 <p className="text-gray-500 text-xs mt-2 text-center">
-                                    {productImages.length > 0 ? `${productImages.length} image(s) added` : 'Optional - Click to browse images'}
+                                    {productImages.length > 0 ? `${productImages.length} image(s) added` : 'Add image URLs for product gallery'}
                                 </p>
                             </div>
                         </div>
@@ -1271,46 +1178,38 @@ const Products = () => {
                         {/* Quality Section */}
                         <div className="grid grid-cols-2 gap-8 mb-6">
                             <div className="flex flex-col items-center justify-center">
-                                <div 
-                                    onClick={() => multiImageInputRef.current?.click()}
-                                    className="w-80 h-64 bg-gray-700 rounded overflow-hidden relative cursor-pointer hover:bg-gray-600 transition-colors border-2 border-dashed border-gray-500 hover:border-[#d4a853]"
-                                >
-                                    {productImages.length > 0 ? (
-                                        <>
-                                            <img src={productImages[currentImageIndex]?.url || productImages[currentImageIndex]} alt="" className="w-full h-full object-cover" />
-                                            <div className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                <span className="text-white text-sm flex items-center gap-2">
-                                                    <HiPlus className="w-5 h-5" /> Click to add more images
-                                                </span>
-                                            </div>
-                                        </>
-                                    ) : (
-                                        <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400">
-                                            <HiUpload className="w-10 h-10 mb-2" />
-                                            <span className="text-sm">Click to add images</span>
-                                            <span className="text-xs mt-1">(JPG, PNG, WEBP - Multiple)</span>
-                                        </div>
-                                    )}
-                                    <button 
-                                        onClick={(e) => { e.stopPropagation(); prevImage(); }}
-                                        className="absolute left-2 top-1/2 transform -translate-y-1/2 text-[#d4a853] text-2xl hover:scale-125 cursor-pointer z-10"
-                                    >
-                                        ❮
-                                    </button>
-                                    <button 
-                                        onClick={(e) => { e.stopPropagation(); nextImage(); }}
-                                        className="absolute right-2 top-1/2 transform -translate-y-1/2 text-[#d4a853] text-2xl hover:scale-125 cursor-pointer z-10"
-                                    >
-                                        ❯
-                                    </button>
-                                    {productImages.length > 0 && (
+                                {productImages.length > 0 ? (
+                                    <div className="w-80 h-64 bg-gray-700 rounded overflow-hidden relative border-2 border-[#d4a853]">
+                                        <img 
+                                            src={productImages[currentImageIndex]?.url || productImages[currentImageIndex]} 
+                                            alt="" 
+                                            className="w-full h-full object-cover"
+                                            onError={(e) => e.target.src = 'https://via.placeholder.com/320x256?text=Invalid+URL'}
+                                        />
+                                        <button 
+                                            onClick={() => setCurrentImageIndex(prev => prev > 0 ? prev - 1 : productImages.length - 1)}
+                                            className="absolute left-2 top-1/2 transform -translate-y-1/2 text-[#d4a853] text-2xl hover:scale-125 cursor-pointer z-10 bg-black/50 rounded-full w-8 h-8 flex items-center justify-center"
+                                        >
+                                            ❮
+                                        </button>
+                                        <button 
+                                            onClick={() => setCurrentImageIndex(prev => prev < productImages.length - 1 ? prev + 1 : 0)}
+                                            className="absolute right-2 top-1/2 transform -translate-y-1/2 text-[#d4a853] text-2xl hover:scale-125 cursor-pointer z-10 bg-black/50 rounded-full w-8 h-8 flex items-center justify-center"
+                                        >
+                                            ❯
+                                        </button>
                                         <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 bg-black/60 px-2 py-1 rounded text-xs text-white">
                                             {currentImageIndex + 1} / {productImages.length}
                                         </div>
-                                    )}
-                                </div>
+                                    </div>
+                                ) : (
+                                    <div className="w-80 h-64 bg-gray-700 rounded overflow-hidden border-2 border-dashed border-gray-500 flex flex-col items-center justify-center text-gray-400">
+                                        <HiLink className="w-10 h-10 mb-2" />
+                                        <span className="text-sm">No images yet</span>
+                                    </div>
+                                )}
                                 <p className="text-gray-500 text-xs mt-2 text-center">
-                                    {productImages.length > 0 ? `${productImages.length} image(s) - Click to add more` : 'Click to browse images'}
+                                    {productImages.length > 0 ? `${productImages.length} gallery image(s)` : 'Add gallery images above'}
                                 </p>
                             </div>
                             <div className="flex items-center justify-center">
@@ -1395,33 +1294,34 @@ const Products = () => {
                                 </tbody>
                             </table>
                             
-                            {/* Add Images Section */}
-                            <div className="mt-4 flex gap-4 flex-wrap">
-                                {/* Add from Device */}
+                            {/* Add More Images via URL */}
+                            <div className="mt-4 flex gap-2 items-center">
+                                <input
+                                    type="url"
+                                    id="additionalImageUrl"
+                                    placeholder="https://example.com/image.jpg"
+                                    className="flex-1 bg-[#2a2a2a] border border-gray-600 rounded px-3 py-2 text-white"
+                                />
                                 <button
-                                    onClick={() => multiImageInputRef.current?.click()}
+                                    onClick={() => {
+                                        const input = document.getElementById('additionalImageUrl');
+                                        const url = input?.value?.trim();
+                                        if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
+                                            setProductImages(prev => [...prev, {
+                                                url: url,
+                                                description: `Image ${prev.length + 1}`,
+                                                isNewArrival: false
+                                            }]);
+                                            input.value = '';
+                                            showToast('Image URL added');
+                                        } else {
+                                            showToast('Please enter a valid URL', 'error');
+                                        }
+                                    }}
                                     className="bg-[#d4a853] text-black px-4 py-2 rounded font-medium hover:bg-[#c49743] cursor-pointer flex items-center gap-2"
                                 >
-                                    <HiUpload className="w-4 h-4" /> Add Images from Device
+                                    <HiPlus className="w-4 h-4" /> Add URL
                                 </button>
-                                
-                                {/* Add by URL */}
-                                <div className="flex gap-2 flex-1">
-                                    <input
-                                        type="text"
-                                        value={newImageUrl}
-                                        onChange={(e) => setNewImageUrl(e.target.value)}
-                                        placeholder="Or enter image URL..."
-                                        className="flex-1 bg-[#1a1a1a] border border-gray-600 rounded px-3 py-2 text-white min-w-[200px]"
-                                        onKeyPress={(e) => e.key === 'Enter' && handleAddImageUrl()}
-                                    />
-                                    <button
-                                        onClick={handleAddImageUrl}
-                                        className="bg-gray-600 text-white px-4 py-2 rounded font-medium hover:bg-gray-500 cursor-pointer"
-                                    >
-                                        + Add URL
-                                    </button>
-                                </div>
                             </div>
                         </div>
 

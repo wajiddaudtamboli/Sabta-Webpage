@@ -6,7 +6,7 @@
   "functions": {
     "api/index.js": {
       "memory": 1024,
-      "maxDuration": 60,
+      "maxDuration": 30,
       "includeFiles": "backend/**"
     }
   },
@@ -24,5 +24,8 @@
         { "key": "Access-Control-Allow-Headers", "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization" }
       ]
     }
-  ]
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  }
 }

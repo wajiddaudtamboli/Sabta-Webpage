@@ -140,11 +140,26 @@ router.get('/:identifier', async (req, res) => {
 // Create collection
 router.post('/', authMiddleware, async (req, res) => {
     try {
+        console.log('Creating collection:', req.body.name);
+        
+        // Validate name
+        if (!req.body.name || req.body.name.trim() === '') {
+            return res.status(400).json({ message: 'Collection name is required' });
+        }
+        
         const newCollection = new Collection(req.body);
         const collection = await newCollection.save();
-        res.json(collection);
+        
+        console.log('Collection created:', collection._id, 'Slug:', collection.slug);
+        res.status(201).json(collection);
     } catch (err) {
         console.error('Error creating collection:', err);
+        
+        // Handle duplicate name
+        if (err.code === 11000) {
+            return res.status(400).json({ message: 'A collection with this name already exists' });
+        }
+        
         res.status(500).json({ message: 'Server error', error: err.message });
     }
 });
@@ -152,11 +167,19 @@ router.post('/', authMiddleware, async (req, res) => {
 // Update collection
 router.put('/:id', authMiddleware, async (req, res) => {
     try {
+        console.log('Updating collection:', req.params.id);
+        
         const collection = await Collection.findByIdAndUpdate(
             req.params.id,
             { ...req.body, updatedAt: Date.now() },
-            { new: true }
+            { new: true, runValidators: true }
         );
+        
+        if (!collection) {
+            return res.status(404).json({ message: 'Collection not found' });
+        }
+        
+        console.log('Collection updated:', collection._id, 'Slug:', collection.slug);
         res.json(collection);
     } catch (err) {
         console.error('Error updating collection:', err);

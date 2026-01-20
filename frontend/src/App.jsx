@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import AOS from "aos";
 import "aos/dist/aos.css";
 import { useEffect } from "react";
@@ -53,6 +53,7 @@ function App() {
         <Route path="/admin/login" element={<Login />} />
         <Route path="/admin" element={<ProtectedRoute />}>
           <Route element={<AdminLayout />}>
+            <Route index element={<Navigate to="/admin/dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="products" element={<Products />} />
             <Route path="projects" element={<AdminProjects />} />

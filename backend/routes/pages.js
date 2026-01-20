@@ -6,10 +6,12 @@ const authMiddleware = require('../middleware/authMiddleware');
 // Get page by name (public)
 router.get('/:name', async (req, res) => {
     try {
+        console.log('GET /api/pages/:name called with name:', req.params.name);
         let page = await Page.findOne({ name: req.params.name });
         
         // If page doesn't exist, create default structure
         if (!page) {
+            console.log('Page not found, returning defaults for:', req.params.name);
             const defaults = {
                 home: {
                     heroSlides: [

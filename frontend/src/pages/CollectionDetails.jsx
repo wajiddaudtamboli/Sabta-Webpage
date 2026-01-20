@@ -55,20 +55,27 @@ const CollectionDetail = () => {
       const res = await api.get(`/collections/${collectionName}`);
       if (res.data) {
         setCollectionData(res.data);
+        return res.data; // Return collection data for use in loadProducts
       }
     } catch (err) {
       console.error("Error loading collection:", err);
     }
     setCollectionLoading(false);
+    return null;
   };
 
-  const loadProducts = async () => {
+  const loadProducts = async (collection = null) => {
     try {
       const params = new URLSearchParams({
         category: collectionName,
         color: filters.color,
         finish: filters.finish,
       });
+      
+      // If we have collection data, also pass the collectionId for better matching
+      if (collection && collection._id) {
+        params.set('collectionId', collection._id);
+      }
 
       const res = await api.get(`/products?${params.toString()}`);
       setProducts(res.data);
@@ -79,10 +86,14 @@ const CollectionDetail = () => {
   };
 
   useEffect(() => {
-    setCollectionLoading(true);
-    setLoading(true);
-    loadCollection();
-    loadProducts();
+    const fetchData = async () => {
+      setCollectionLoading(true);
+      setLoading(true);
+      const collection = await loadCollection();
+      setCollectionLoading(false);
+      await loadProducts(collection);
+    };
+    fetchData();
   }, [collectionName, filters]);
 
   const collectionContent = {
@@ -513,90 +524,58 @@ const CollectionDetail = () => {
       {/* PRODUCT GRID WITH HOVER EFFECT */}
       <section className="px-6 sm:px-10 md:px-16 lg:px-20 pb-20">
         <h2 className="text-xl sm:text-2xl font-semibold mb-6">
-          {loading ? 'Loading products...' : `${products.length > 0 ? products.length : sampleProducts.length} Products`}
+          {loading ? 'Loading products...' : `${products.length} Product${products.length !== 1 ? 's' : ''}`}
         </h2>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-5 gap-x-6 gap-y-20">
-          {(products.length > 0 ? products : sampleProducts).map((p) => (
-            <Link 
-              key={p._id} 
-              to={`/product/${p._id}`}
-              className="mx-auto w-full max-w-[230px] block"
-            >
-              {/* TITLE ABOVE IMAGE */}
-              <div className="text-center mb-3">
-                <p className="text-lg font-semibold tracking-wide">
-                  {p.code || "---"}
-                </p>
+        {loading ? (
+          <div className="flex justify-center items-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#d4a853]"></div>
+          </div>
+        ) : products.length > 0 ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+            {products.map((p) => (
+              <Link 
+                key={p._id} 
+                to={`/product/${p._id}`}
+                className="group block"
+              >
+                {/* Card Container */}
+                <div className="flex flex-col items-center">
+                  {/* TILE IMAGE CARD */}
+                  <div className="relative w-full aspect-3/4 rounded-xl overflow-hidden transition-all duration-300 group-hover:scale-105 group-hover:-translate-y-2"
+                    style={{ boxShadow: '0 10px 30px rgba(0,0,0,0.4)' }}
+                  >
+                    {/* IMAGE */}
+                    <img
+                      src={p.primaryImage || p.images?.[0] || p.productImages?.[0]?.url || p.displayImage || Marble1}
+                      alt={p.name}
+                      className="absolute inset-0 w-full h-full object-cover"
+                      onError={(e) => { e.target.src = Marble1; }}
+                    />
 
-                <div
-                  className="w-32 h-px mx-auto my-1 
-      bg-linear-to-r from-transparent via-(--brand-accent) to-transparent"
-                ></div>
+                    {/* Subtle overlay on hover */}
+                    <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  </div>
 
-                <p className="text-lg font-extrabold uppercase tracking-wide">
-                  {p.name}
-                </p>
-              </div>
-
-              {/* TILE IMAGE CARD */}
-              <div className="relative h-[350px] rounded-lg overflow-hidden shadow-lg group">
-                {/* IMAGE */}
-                <div
-                  className="absolute inset-0 bg-center bg-cover transition-transform duration-500 group-hover:scale-110"
-                  style={{ backgroundImage: `url(${p.images?.[0] || p.productImages?.[0]?.url || p.image || Marble1})` }}
-                ></div>
-
-                {/* OVERLAY */}
-                <div
-                  className="
-        absolute inset-0 
-        bg-black/30            /* MOBILE: always slightly dark */
-        md:bg-black/10         /* DESKTOP: default light */
-        md:group-hover:bg-black/60 
-        transition-all duration-500
-      "
-                ></div>
-
-                {/* DETAILS */}
-                <div
-                  className="
-        absolute inset-0 flex flex-col items-center justify-center text-center px-4
-       
-
-        /* MOBILE ALWAYS VISIBLE */
-        opacity-100 translate-y-0
-
-        /* DESKTOP: reveal on hover */
-        md:opacity-0 md:translate-y-6
-        md:group-hover:opacity-100 md:group-hover:translate-y-0
-
-        transition-all duration-700 ease-out
-      "
-                >
-                  <h3 className="text-sm sm:text-base font-bold uppercase">
-                    {p.description ? p.description.substring(0, 50) + '...' : 'Elegance is Hidden in the Details'}
-                  </h3>
-
-                  <div className="h-10 w-px bg-(--brand-accent) my-3"></div>
-
-                  <p className="text-xs sm:text-sm leading-relaxed">
-                    {p.color && p.finish ? `${p.color} • ${p.finish}` : 'Adds strong and characterful elegance with veining details.'}
-                  </p>
-
-                  <span className="mt-4 flex items-center gap-2 bg-(--brand-bg) text-(--brand-accent) px-4 py-1 rounded-full font-semibold text-xs sm:text-sm">
-                    VIEW →
-                  </span>
+                  {/* TITLE BELOW IMAGE */}
+                  <div className="mt-4 text-center">
+                    <h3 className="text-white text-base sm:text-lg font-bold uppercase tracking-wider">
+                      {p.name}
+                    </h3>
+                    <p className="text-[#d4a853] text-xs uppercase tracking-widest mt-1">
+                      {p.code || p.finish || "Premium Stone"}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            </Link>
-          ))}
-        </div>
-        
-        {!loading && products.length === 0 && (
+              </Link>
+            ))}
+          </div>
+        ) : (
           <div className="text-center py-12">
-            <p className="text-lg text-gray-500">
-              No products found in this collection yet. Check back soon!
+            <div className="text-6xl mb-4">🪨</div>
+            <h3 className="text-xl font-semibold text-gray-300 mb-2">No Products Yet</h3>
+            <p className="text-gray-500">
+              Products for this collection will be available soon. Check back later!
             </p>
           </div>
         )}

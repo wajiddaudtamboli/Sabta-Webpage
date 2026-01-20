@@ -61,12 +61,33 @@ const ProductSchema = new mongoose.Schema({
     updatedAt: { type: Date, default: Date.now }
 });
 
-// Auto-generate slug from name
+// Index for better query performance
+ProductSchema.index({ collectionId: 1 });
+ProductSchema.index({ category: 1 });
+ProductSchema.index({ status: 1 });
+ProductSchema.index({ slug: 1 });
+
+// Auto-generate slug from name (always update)
 ProductSchema.pre('save', async function() {
-    if (this.name && !this.slug) {
-        this.slug = this.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    if (this.name) {
+        this.slug = this.name.toLowerCase()
+            .replace(/[^a-z0-9\s]+/g, '')
+            .replace(/\s+/g, '-')
+            .replace(/(^-|-$)/g, '');
     }
     this.updatedAt = new Date();
+});
+
+// Handle findOneAndUpdate
+ProductSchema.pre('findOneAndUpdate', function() {
+    const update = this.getUpdate();
+    if (update.name) {
+        update.slug = update.name.toLowerCase()
+            .replace(/[^a-z0-9\s]+/g, '')
+            .replace(/\s+/g, '-')
+            .replace(/(^-|-$)/g, '');
+    }
+    update.updatedAt = new Date();
 });
 
 // Virtual to get all images (combines legacy and new)
@@ -75,5 +96,17 @@ ProductSchema.virtual('allImages').get(function() {
     const newImages = (this.productImages || []).map(img => img.url);
     return [...new Set([...legacyImages, ...newImages])];
 });
+
+// Virtual to get primary display image
+ProductSchema.virtual('displayImage').get(function() {
+    return this.primaryImage || 
+           (this.productImages && this.productImages[0]?.url) || 
+           (this.images && this.images[0]) || 
+           '';
+});
+
+// Ensure virtuals are included in JSON output
+ProductSchema.set('toJSON', { virtuals: true });
+ProductSchema.set('toObject', { virtuals: true });
 
 module.exports = mongoose.model('Product', ProductSchema);

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import Hero from "../components/Hero";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -20,45 +20,6 @@ import Quartz from "../assets/CollectionImagesHome/Quartz.jpeg"
 import Terrazzo from "../assets/CollectionImagesHome/Terrazzo.jpeg"
 import MainImage from "../assets/BannerImages/Exotic-Granite.jpeg"
 import { api } from "../api/api";
-
-// Check if device is touch-based
-const isTouchDevice = () => {
-  return typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
-};
-
-// 3D Tilt effect handler for cards
-const handleCardTilt = (e, cardElement) => {
-  if (isTouchDevice() || !cardElement) return;
-
-  const rect = cardElement.getBoundingClientRect();
-  const centerX = rect.left + rect.width / 2;
-  const centerY = rect.top + rect.height / 2;
-  const mouseX = e.clientX - centerX;
-  const mouseY = e.clientY - centerY;
-  
-  const rotateX = (mouseY / (rect.height / 2)) * -10;
-  const rotateY = (mouseX / (rect.width / 2)) * 10;
-  
-  cardElement.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.02)`;
-  
-  const glareEl = cardElement.querySelector('.tilt-glare');
-  if (glareEl) {
-    const glareX = ((e.clientX - rect.left) / rect.width) * 100;
-    const glareY = ((e.clientY - rect.top) / rect.height) * 100;
-    glareEl.style.background = `radial-gradient(circle at ${glareX}% ${glareY}%, rgba(255,255,255,0.15) 0%, transparent 60%)`;
-    glareEl.style.opacity = '1';
-  }
-};
-
-const handleCardReset = (cardElement) => {
-  if (!cardElement) return;
-  cardElement.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale(1)';
-  
-  const glareEl = cardElement.querySelector('.tilt-glare');
-  if (glareEl) {
-    glareEl.style.opacity = '0';
-  }
-};
 
 const Home = () => {
   const videoRef = useRef(null);
@@ -212,44 +173,33 @@ const Home = () => {
             { name: "Terrazzo", img: Terrazzo, description: "Artistic blend of fragments", link: "/collections/terrazzo" },
           ].map((item, index) => (
             <SwiperSlide key={index}>
-              <Link to={item.link}>
-                <div
-                  className="relative cursor-pointer h-[420px] rounded-xl overflow-hidden"
-                  style={{
-                    transform: 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale(1)',
-                    transformStyle: 'preserve-3d',
-                    transition: 'transform 0.15s ease-out, box-shadow 0.3s ease-out',
-                    boxShadow: '0 15px 35px rgba(0,0,0,0.4)',
-                    willChange: 'transform'
-                  }}
-                  onMouseMove={(e) => handleCardTilt(e, e.currentTarget)}
-                  onMouseLeave={(e) => handleCardReset(e.currentTarget)}
-                >
-                  {/* BACKGROUND IMAGE */}
-                  <div className="absolute inset-0">
+              <Link to={item.link} className="group block">
+                <div className="flex flex-col items-center">
+                  {/* Stone Tile Card */}
+                  <div
+                    className="relative cursor-pointer h-[350px] w-full rounded-xl overflow-hidden transition-all duration-300 group-hover:scale-105 group-hover:-translate-y-2"
+                    style={{
+                      boxShadow: '0 10px 30px rgba(0,0,0,0.4)',
+                    }}
+                  >
+                    {/* BACKGROUND IMAGE */}
                     <img
                       src={item.img}
                       alt={item.name}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      className="w-full h-full object-cover"
                     />
+
+                    {/* Subtle overlay on hover */}
+                    <div className="absolute inset-0 bg-linear-to-t from-black/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                   </div>
 
-                  {/* Glare Effect */}
-                  <div 
-                    className="tilt-glare absolute inset-0 pointer-events-none z-10 rounded-xl transition-opacity duration-300"
-                    style={{ opacity: 0 }}
-                  />
-
-                  {/* OVERLAY */}
-                  <div className="absolute inset-0 bg-linear-to-b from-black/60 to-transparent"></div>
-
-                  {/* TEXT LAYER */}
-                  <div className="absolute top-6 left-6 right-6 text-white z-20">
-                    <h2 className="text-2xl sm:text-3xl font-extrabold capitalize leading-tight drop-shadow-lg">
+                  {/* Title Below Card */}
+                  <div className="mt-4 text-center">
+                    <h3 className="text-white text-lg sm:text-xl font-bold uppercase tracking-wider">
                       {item.name}
-                    </h2>
-                    <p className="mt-2 text-sm leading-snug drop-shadow-md opacity-90">
-                      {item.description}
+                    </h3>
+                    <p className="text-[#d4a853] text-xs sm:text-sm uppercase tracking-widest mt-1">
+                      Series
                     </p>
                   </div>
                 </div>

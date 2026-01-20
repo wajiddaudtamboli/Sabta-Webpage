@@ -216,8 +216,8 @@ const Projects = () => {
                                     {(projects[0]?.featuredImage || projects[0]?.imageUrl) ? (
                                         <img src={projects[0].featuredImage || projects[0].imageUrl} alt="" className="w-full h-full object-cover" />
                                     ) : (
-                                        <div className="w-full h-full bg-linear-to-br from-[#d4a853]/20 to-[#1a1a1a] flex items-center justify-center">
-                                            <FaBuilding className="text-4xl text-[#d4a853]/30" />
+                                        <div className="w-full h-full bg-black flex items-center justify-center">
+                                            <FaBuilding className="text-4xl text-gray-600" />
                                         </div>
                                     )}
                                 </div>
@@ -225,8 +225,8 @@ const Projects = () => {
                                     {(projects[1]?.featuredImage || projects[1]?.imageUrl) ? (
                                         <img src={projects[1].featuredImage || projects[1].imageUrl} alt="" className="w-full h-full object-cover" />
                                     ) : (
-                                        <div className="w-full h-full bg-linear-to-br from-[#d4a853]/10 to-[#1a1a1a] flex items-center justify-center">
-                                            <FaBuilding className="text-3xl text-[#d4a853]/20" />
+                                        <div className="w-full h-full bg-black flex items-center justify-center">
+                                            <FaBuilding className="text-3xl text-gray-600" />
                                         </div>
                                     )}
                                 </div>
@@ -236,8 +236,8 @@ const Projects = () => {
                                     {(projects[2]?.featuredImage || projects[2]?.imageUrl) ? (
                                         <img src={projects[2].featuredImage || projects[2].imageUrl} alt="" className="w-full h-full object-cover" />
                                     ) : (
-                                        <div className="w-full h-full bg-linear-to-br from-[#1a1a1a] to-[#d4a853]/10 flex items-center justify-center">
-                                            <FaBuilding className="text-3xl text-[#d4a853]/20" />
+                                        <div className="w-full h-full bg-black flex items-center justify-center">
+                                            <FaBuilding className="text-3xl text-gray-600" />
                                         </div>
                                     )}
                                 </div>
@@ -245,8 +245,8 @@ const Projects = () => {
                                     {(projects[3]?.featuredImage || projects[3]?.imageUrl) ? (
                                         <img src={projects[3].featuredImage || projects[3].imageUrl} alt="" className="w-full h-full object-cover" />
                                     ) : (
-                                        <div className="w-full h-full bg-linear-to-br from-[#1a1a1a] to-[#d4a853]/20 flex items-center justify-center">
-                                            <FaBuilding className="text-4xl text-[#d4a853]/30" />
+                                        <div className="w-full h-full bg-black flex items-center justify-center">
+                                            <FaBuilding className="text-4xl text-gray-600" />
                                         </div>
                                     )}
                                 </div>
