@@ -49,43 +49,43 @@ const CollectionDetail = () => {
     finish: "",
   });
 
-  // Fetch collection from API if not in static list
-  const loadCollection = async () => {
-    try {
-      const res = await api.get(`/collections/${collectionName}`);
-      if (res.data) {
-        setCollectionData(res.data);
-        return res.data; // Return collection data for use in loadProducts
-      }
-    } catch (err) {
-      console.error("Error loading collection:", err);
-    }
-    setCollectionLoading(false);
-    return null;
-  };
-
-  const loadProducts = async (collection = null) => {
-    try {
-      const params = new URLSearchParams({
-        category: collectionName,
-        color: filters.color,
-        finish: filters.finish,
-      });
-      
-      // If we have collection data, also pass the collectionId for better matching
-      if (collection && collection._id) {
-        params.set('collectionId', collection._id);
-      }
-
-      const res = await api.get(`/products?${params.toString()}`);
-      setProducts(res.data);
-    } catch (err) {
-      console.error("Error loading products:", err);
-    }
-    setLoading(false);
-  };
-
   useEffect(() => {
+    // Fetch collection from API if not in static list
+    const loadCollection = async () => {
+      try {
+        const res = await api.get(`/collections/${collectionName}`);
+        if (res.data) {
+          setCollectionData(res.data);
+          return res.data; // Return collection data for use in loadProducts
+        }
+      } catch (err) {
+        console.error("Error loading collection:", err);
+      }
+      setCollectionLoading(false);
+      return null;
+    };
+
+    const loadProducts = async (collection = null) => {
+      try {
+        const params = new URLSearchParams({
+          category: collectionName,
+          color: filters.color,
+          finish: filters.finish,
+        });
+        
+        // If we have collection data, also pass the collectionId for better matching
+        if (collection && collection._id) {
+          params.set('collectionId', collection._id);
+        }
+
+        const res = await api.get(`/products?${params.toString()}`);
+        setProducts(res.data);
+      } catch (err) {
+        console.error("Error loading products:", err);
+      }
+      setLoading(false);
+    };
+
     const fetchData = async () => {
       setCollectionLoading(true);
       setLoading(true);
@@ -300,89 +300,6 @@ const CollectionDetail = () => {
       </div>
     );
   }
-
-  const sampleProducts = [
-    {
-      _id: "1",
-      name: "Royal White Marble",
-      image:
-        Marble1,
-    },
-    {
-      _id: "2",
-      name: "Italian Grey Onyx",
-      image:
-        Marble2,
-    },
-    {
-      _id: "3",
-      name: "Golden Portoro",
-      image: Marble3,
-    },
-    {
-      _id: "4",
-      name: "Agate Blue Slab",
-      image: Marble4,
-    },
-    {
-      _id: "5",
-      name: "Arabescato Marble",  
-      image: Marble5,
-    },
-    {
-      _id: "6",
-      name: "Alaska Marble",  
-      image: Marble6,
-    },{
-      _id: "7",
-      name: "Ukraine Marble",  
-      image: Marble7,
-    },{
-      _id: "8",
-      name: "Arabic Marble",  
-      image: Marble8,
-    },{
-      _id: "9",
-      name: "Indian Marble",  
-      image: Marble9,
-    },{
-      _id: "10",
-      name: "USA Marble",  
-      image: Marble10,
-    },{
-      _id: "11",
-      name: "Arabescato Marble",  
-      image: Marble11,
-    },{
-      _id: "12",
-      name: "Arabescato Marble",  
-      image: Marble12,
-    },{
-      _id: "13",
-      name: "Arabescato Marble",  
-      image: Marble13,
-    },{
-      _id: "14",
-      name: "Arabescato Marble",  
-      image: Marble14,
-    },{
-      _id: "15",
-      name: "Arabescato Marble",  
-      image: Marble15,
-    },{
-      _id: "16",
-      name: "Arabescato Marble",  
-      image: Marble16,
-    },{
-      _id: "17",
-      name: "Arabescato Marble",  
-      image: Marble17,
-    },{
-      _id: "18",
-      name: "Arabescato Marble",  
-      image: Marble18,
-    },
-  ];
 
   return (
     <div className="w-full">

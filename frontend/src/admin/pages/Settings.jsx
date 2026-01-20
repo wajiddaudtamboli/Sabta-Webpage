@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { HiSave, HiTrash, HiUpload } from 'react-icons/hi';
+import { useState, useEffect } from 'react';
+import { HiSave, HiTrash } from 'react-icons/hi';
 import { api } from '../../api/api';
 
 const Settings = () => {
@@ -28,9 +28,6 @@ const Settings = () => {
         mapUrl: ''
     });
     const [newsletter, setNewsletter] = useState([]);
-
-    const logoInputRef = useRef(null);
-    const qrInputRef = useRef(null);
 
     const tabs = [
         { id: 'logo', label: 'Logo' },
@@ -75,36 +72,6 @@ const Settings = () => {
         } catch (error) {
             console.error('Error saving setting:', error);
             setMessage({ type: 'error', text: 'Error saving settings' });
-        } finally {
-            setLoading(false);
-            setTimeout(() => setMessage({ type: '', text: '' }), 3000);
-        }
-    };
-
-    const handleImageUpload = async (e, type) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        setLoading(true);
-        try {
-            const formData = new FormData();
-            formData.append('file', file);
-            
-            const response = await api.post('/media/upload', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
-
-            if (response.data.url) {
-                if (type === 'logo') {
-                    setLogo({ ...logo, url: response.data.url });
-                } else if (type === 'qr') {
-                    setFooter({ ...footer, qrCode: response.data.url });
-                }
-                setMessage({ type: 'success', text: 'Image uploaded!' });
-            }
-        } catch (error) {
-            console.error('Error uploading image:', error);
-            setMessage({ type: 'error', text: 'Error uploading image' });
         } finally {
             setLoading(false);
             setTimeout(() => setMessage({ type: '', text: '' }), 3000);

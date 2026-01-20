@@ -65,8 +65,7 @@ const ProductTags = ({ product }) => {
 };
 
 const ProductDetail = () => {
-  const { collectionName, productId } = useParams();
-  const title = collectionName ? collectionName.replace(/-/g, " ") : "";
+  const { productId } = useParams();
 
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);

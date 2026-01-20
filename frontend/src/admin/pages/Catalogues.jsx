@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import api from '../../api/api';
-import { HiEye, HiPencil, HiTrash, HiDotsVertical, HiPlay, HiPause, HiUpload, HiPlus, HiX, HiDocumentText, HiPhotograph, HiExternalLink } from 'react-icons/hi';
+import { HiEye, HiPencil, HiTrash, HiDotsVertical, HiPlay, HiPause, HiPlus, HiX, HiDocumentText, HiPhotograph, HiExternalLink } from 'react-icons/hi';
 
 const Catalogues = () => {
     const [catalogues, setCatalogues] = useState([]);
@@ -8,12 +8,7 @@ const Catalogues = () => {
     const [showModal, setShowModal] = useState(false);
     const [editingCatalogue, setEditingCatalogue] = useState(null);
     const [openMenuId, setOpenMenuId] = useState(null);
-    const [uploading, setUploading] = useState(false);
     const [filter, setFilter] = useState('all');
-    
-    const fileInputRef = useRef(null);
-    const thumbnailInputRef = useRef(null);
-    const [uploadTarget, setUploadTarget] = useState(null); // 'file' or 'thumbnail'
     
     const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
     
@@ -102,69 +97,6 @@ const Catalogues = () => {
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
-    };
-
-    // Handle file upload to Cloudinary
-    const handleFileUpload = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        // Validate file type
-        const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-        if (!allowedTypes.includes(file.type)) {
-            showToast('Invalid file type. Please upload PDF or image files.', 'error');
-            return;
-        }
-
-        // Validate file size (max 20MB for PDFs, 10MB for images)
-        const maxSize = file.type === 'application/pdf' ? 20 * 1024 * 1024 : 10 * 1024 * 1024;
-        if (file.size > maxSize) {
-            showToast(`File too large. Max size is ${file.type === 'application/pdf' ? '20MB' : '10MB'}.`, 'error');
-            return;
-        }
-
-        setUploading(true);
-        try {
-            const uploadData = new FormData();
-            uploadData.append('file', file);
-
-            // Use regular upload endpoint for all files
-            const res = await api.post('/media/upload', uploadData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
-
-            const uploadedUrl = res.data.url || res.data.secure_url;
-            
-            if (uploadTarget === 'file') {
-                const isPdf = file.type === 'application/pdf';
-                setFormData(prev => ({ 
-                    ...prev, 
-                    fileUrl: uploadedUrl,
-                    fileType: isPdf ? 'pdf' : 'image'
-                }));
-                showToast('Catalogue file uploaded successfully');
-            } else if (uploadTarget === 'thumbnail') {
-                setFormData(prev => ({ ...prev, thumbnailUrl: uploadedUrl }));
-                showToast('Thumbnail uploaded successfully');
-            }
-        } catch (err) {
-            console.error('Upload error:', err);
-            showToast(err.response?.data?.message || 'Failed to upload file', 'error');
-        } finally {
-            setUploading(false);
-            setUploadTarget(null);
-            e.target.value = '';
-        }
-    };
-
-    // Trigger file input
-    const triggerUpload = (target) => {
-        setUploadTarget(target);
-        if (target === 'file') {
-            fileInputRef.current?.click();
-        } else {
-            thumbnailInputRef.current?.click();
-        }
     };
 
     // Save catalogue (create or update)

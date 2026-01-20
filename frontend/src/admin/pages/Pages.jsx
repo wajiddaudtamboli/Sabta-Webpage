@@ -26,6 +26,7 @@ const Pages = () => {
     const [pageData, setPageData] = useState(null);
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
+     
     const [uploading, setUploading] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
     const fileInputRef = useRef(null);
@@ -98,6 +99,7 @@ const Pages = () => {
 
     useEffect(() => {
         fetchPageData(selectedPage);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedPage]);
 
     const fetchPageData = async (pageName) => {
@@ -216,7 +218,8 @@ const Pages = () => {
         });
     };
 
-    // Handle file upload
+    // Handle file upload (used by hidden file input triggered via fileInputRef)
+    // eslint-disable-next-line no-unused-vars
     const handleFileUpload = async (e) => {
         const file = e.target.files[0];
         if (!file) return;

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../api/api';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { FaCalendarAlt, FaChevronLeft, FaChevronRight, FaBuilding, FaMapMarkerAlt, FaTag, FaSearchPlus, FaExternalLinkAlt, FaTimes } from 'react-icons/fa';
 
 const Projects = () => {

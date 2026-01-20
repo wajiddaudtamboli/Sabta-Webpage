@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { api } from '../api/api';
 import { FaChevronLeft, FaChevronRight, FaTimes, FaTag } from 'react-icons/fa';
 

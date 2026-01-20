@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { HiTrash, HiSave, HiX, HiPlus, HiPhotograph, HiStar } from 'react-icons/hi';
 import { api } from '../../api/api';
 
@@ -6,14 +6,9 @@ const Projects = () => {
     const [projects, setProjects] = useState([]);
     const [selectedProject, setSelectedProject] = useState(null);
     const [loading, setLoading] = useState(false);
-    const [uploading, setUploading] = useState(false);
-    const [uploadingGallery, setUploadingGallery] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
     const [filterStatus, setFilterStatus] = useState('all');
     const [filterCategory, setFilterCategory] = useState('all');
-    
-    const imageInputRef = useRef(null);
-    const galleryInputRef = useRef(null);
     
     const [formData, setFormData] = useState({
         title: '',
@@ -93,29 +88,6 @@ const Projects = () => {
         } else {
             setFormData(prev => ({ ...prev, [name]: value }));
         }
-    };
-
-    const handleImageUpload = async (e) => {
-        // Removed file upload functionality - now using URL inputs only
-        return;
-    };
-
-    const handleGalleryUpload = async (e) => {
-        // Removed file upload functionality - now using URL inputs only
-        return;
-    };
-
-    const removeGalleryImage = (index) => {
-        setFormData(prev => ({
-            ...prev,
-            gallery: prev.gallery.filter((_, i) => i !== index)
-        }));
-    };
-
-    const setAsFeatured = (url) => {
-        setFormData(prev => ({ ...prev, featuredImage: url }));
-        setMessage({ type: 'success', text: 'Featured image updated!' });
-        setTimeout(() => setMessage({ type: '', text: '' }), 2000);
     };
 
     const handleSubmit = async (e) => {
